@@ -1,0 +1,45 @@
+services:
+  aria2-pro:
+    container_name: aria2-pro
+    image: p3terx/aria2-pro
+    env_file:
+      - default.env
+      - my.env
+    volumes:
+      - ${WIS2SUB_HOST_DATADIR}/config/aria2-config:/data/pywis-pubsub/config/aria2-config:rw
+      - ${WIS2SUB_HOST_DATADIR}/data/aria2-downloads:/data/pywis-pubsub/data/aria2-downloads:rw
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 1m
+
+  ariang:
+    container_name: ariang
+    image: p3terx/ariang
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 1m
+
+  mqp-subscriber:
+    container_name: mqp-subscriber
+    build:
+      context: ./mqp-subscriber
+    env_file:
+      - default.env
+      - my.env
+    volumes:
+      - ${WIS2SUB_HOST_DATADIR}/config/mqp-subscriber:/data/pywis-pubsub/config/mqp-subscriber:rw
+      - ${WIS2SUB_SUB_CACERT}:/usr/src/sub/caFiles:ro
+      - ${WIS2SUB_HOST_DATADIR}/data/aria2-downloads:/data/pywis-pubsub/data/aria2-downloads:rw
+    depends_on:
+      - aria2-pro
+      - ariang
+    links:
+      - aria2-pro
+    command: sh -c "/entrypoint.sh"
+
+volumes:
+  es-data:
