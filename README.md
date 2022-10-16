@@ -12,8 +12,10 @@ python3 pywis-pubsub-ctl.py start
 
 # Configuration for sub and download
 config files for sub and download are under mqp-subscriber/configFiles
-- dwd.txt
-- whitelist.txt
+- dwd.txt (shared config file sub and py-downloader)
+- whitelist.txt (domains from which download is allowed, one per line)
+
+## dwd.txt
 
 config field | default | description | example
 -------------|---------|-------------|--------
