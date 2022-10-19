@@ -19,23 +19,32 @@
 #
 ###############################################################################
 
-FROM ubuntu:focal
+import logging
+import sys
 
-MAINTAINER "tomkralidis@gmail.com"
+import click
 
-ENV TZ="Etc/UTC" \
-    DEBIAN_FRONTEND="noninteractive" \
-    BUILD_PACKAGES="build-essential cmake gfortran python3-wheel" \
-    DEBIAN_PACKAGES="bash python3-pip python3-dev python3-cryptography libssl-dev python3-paho-mqtt"
+OPTION_CONFIG = click.option(
+    '--config',
+    type=click.File('rb', encoding='utf-8'),
+    help='Name of configuration file')
 
 
-RUN apt-get update -y \
-    && apt-get install -y ${BUILD_PACKAGES} \
-    && apt-get install -y ${DEBIAN_PACKAGES} \
-    && $PIP_PLUGIN_PACKAGES \
-    # cleanup
-    && apt-get remove --purge -y ${BUILD_PACKAGES} \
-    && apt autoremove -y  \
-    && apt-get -q clean \
-    && rm -rf /var/lib/apt/lists/* \
+def OPTION_VERBOSITY(f):
+    logging_options = ['ERROR', 'WARNING', 'INFO', 'DEBUG']
 
+    def callback(ctx, param, value):
+        if value is not None:
+            logging.basicConfig(stream=sys.stdout,
+                                level=getattr(logging, value))
+        return True
+
+    return click.option('--verbosity', '-v',
+                        type=click.Choice(logging_options),
+                        help='Verbosity',
+                        callback=callback)(f)
+
+
+def cli_callbacks(f):
+    f = OPTION_VERBOSITY(f)
+    return f

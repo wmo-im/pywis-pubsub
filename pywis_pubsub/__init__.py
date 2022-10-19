@@ -19,23 +19,18 @@
 #
 ###############################################################################
 
-FROM ubuntu:focal
+__version__ = '0.0.1'
 
-MAINTAINER "tomkralidis@gmail.com"
+import click
 
-ENV TZ="Etc/UTC" \
-    DEBIAN_FRONTEND="noninteractive" \
-    BUILD_PACKAGES="build-essential cmake gfortran python3-wheel" \
-    DEBIAN_PACKAGES="bash python3-pip python3-dev python3-cryptography libssl-dev python3-paho-mqtt"
+from pywis_pubsub.subscribe import subscribe
 
 
-RUN apt-get update -y \
-    && apt-get install -y ${BUILD_PACKAGES} \
-    && apt-get install -y ${DEBIAN_PACKAGES} \
-    && $PIP_PLUGIN_PACKAGES \
-    # cleanup
-    && apt-get remove --purge -y ${BUILD_PACKAGES} \
-    && apt autoremove -y  \
-    && apt-get -q clean \
-    && rm -rf /var/lib/apt/lists/* \
+@click.group()
+@click.version_option(version=__version__)
+def cli():
+    """WIS 2.0 PubSub subscribe and download utility"""
+    pass
 
+
+cli.add_command(subscribe)

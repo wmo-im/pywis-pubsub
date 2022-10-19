@@ -19,23 +19,38 @@
 #
 ###############################################################################
 
-FROM ubuntu:focal
+import os
+import unittest
 
-MAINTAINER "tomkralidis@gmail.com"
-
-ENV TZ="Etc/UTC" \
-    DEBIAN_FRONTEND="noninteractive" \
-    BUILD_PACKAGES="build-essential cmake gfortran python3-wheel" \
-    DEBIAN_PACKAGES="bash python3-pip python3-dev python3-cryptography libssl-dev python3-paho-mqtt"
+TESTDATA_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
-RUN apt-get update -y \
-    && apt-get install -y ${BUILD_PACKAGES} \
-    && apt-get install -y ${DEBIAN_PACKAGES} \
-    && $PIP_PLUGIN_PACKAGES \
-    # cleanup
-    && apt-get remove --purge -y ${BUILD_PACKAGES} \
-    && apt autoremove -y  \
-    && apt-get -q clean \
-    && rm -rf /var/lib/apt/lists/* \
+def get_abspath(filepath):
+    """helper function to facilitate absolute test file access"""
 
+    return os.path.join(TESTDATA_DIR, filepath)
+
+
+def msg(test_id, test_description):
+    """convenience function to print out test id and desc"""
+    return f'{test_id}: {test_description}'
+
+
+class PyWISPubSubTest(unittest.TestCase):
+    """Test suite for package pywis_pubsub"""
+    def setUp(self):
+        """setup test fixtures, etc."""
+        print(msg(self.id(), self.shortDescription()))
+
+    def tearDown(self):
+        """return to pristine state"""
+        pass
+
+    def test_smoke(self):
+        """Simple Smoke Test"""
+        # test assertions go here
+        self.assertEquals(1, 1, 'Expected equality')
+
+
+if __name__ == '__main__':
+    unittest.main()
