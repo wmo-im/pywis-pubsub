@@ -1,0 +1,12 @@
+
+# RFC1738 URL
+broker: mqtts://localhost:1883
+
+# list of topics to subscribe to
+topics:
+    - '#'
+
+# local download directory
+storage:
+    type: fs
+    path: /tmp/foo/bar

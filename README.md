@@ -1,44 +1,117 @@
+[![flake8](https://github.com/wmo-im/pywis-pubsub/workflows/flake8/badge.svg)](https://github.com/wmo-im/pywis-pubsub/actions)
+
 # pywis-pubsub
-WIS2 downloader
 
-# General information
-Docker to subscribe to a message broker and download data from URL included in message via aria2 or py-downloader
+## Overview
 
-# Build
-python3 pywis-pubsub-ctl.py build
+pywis-pubsub provides subscription and download capability of WMO data from WIS 2.0
+infrastructure services.
 
-# Start container
-python3 pywis-pubsub-ctl.py start
+## Installation
 
-# Configuration for sub and download
-config files for sub and download are under mqp-subscriber/configFiles
-- dwd.txt (shared config file sub and py-downloader)
-- whitelist.txt (domains from which download is allowed, one per line)
+The easiest way to install pywis-pubsub is via the Python [pip](https://pip.pypa.io)
+utility:
 
-## dwd.txt
+```bash
+pip3 install pywis-pubsub
+```
 
-config field | default | description | example
--------------|---------|-------------|--------
-"wis2box" | "False" | Use py-scripts inside a docker container or standalone | "True" (if inside docker container)
-"toSubscribe" | "False" | Subscribe to a message broker (must be set to "True") | "True"
-"sub_host" | NO default | Hostname of the message broker you want to subscribe to | "oflkd011.dwd.de"
-"sub_port" | NO default | Port of the message broker you want to subscribe to | "8883"
-"sub_cacert" | "/usr/src/sub/caFiles/ca-bundle.crt" (for docker container) | path/to/cacert_file.crt
-"sub_protocol" | No default | MQP Protocol to use for subscrption (should be "mqtts", amqp(s) not supported) | "mqtts"
-"sub_protocol_version" | "MQTTv5" | MQTT protocol version 5 or 3.1.1 | "MQTTv5"
-"sub_user" | NO default | User to authenticate for subscription |
-"sub_password" | NO default | Password for subscription |
-"sub_clientname" | hostname (if value set in config file, hostname_valueSetInConfig) | clientname | "wis2box_mqp-subscriber"
-"sub_topic" | ['#'] | topics to subscribe to | ["cache/v04/#"]
-"sub_logfile" | "sub_connect_" + printTimeNow + ".log" | name for logfile | "/usr/src/sub/logs/dwd.log"
-"sub_loglevel" | "INFO" | leg level | "INFO"
-"sub_maxMSGsize" | 2048 | max allowed message size | 2048
-"sub_share_name" | "" (must be changed, use a unique groupname for each shared subscription) | MQTTv5 supports shared subscriptions, groupname for all clients sharing a subscription | "wis2box_mygroupname" (change to own uinque groupname)
-"sub_share_quantity" | 1 | Number of clients per topic for shared subscriptions | 5 
-"show_message" | "False" | print messages to stdout? | "False"
-"msg_store" | None (msg_store is needed for downloader) | directory for message store (write messages with data_id as files) | "/usr/src/sub/msg_store/"
+### Requirements
+- Python 3
+- [virtualenv](https://virtualenv.pypa.io)
 
+### Dependencies
+Dependencies are listed in [requirements.txt](requirements.txt). Dependencies
+are automatically installed during pywis-pubsub installation.
 
+### Installing pywis-pubsub
 
+```bash
+# setup virtualenv
+python3 -m venv --system-site-packages pywis-pubsub
+cd pywis-pubsub
+source bin/activate
 
-to be continued
+# clone codebase and install
+git clone https://github.com/geopython/pywis-pubsub.git
+cd pywis-pubsub
+python3 setup.py build
+python3 setup.py install
+```
+
+## Running
+
+```bash
+cp pywis-pubsub-config-example.yml local.yml
+vi local.yml # update accordingly
+
+pywis-pubsub --version
+
+# connect, and simply echo messages
+pywis-pubsub subscribe --config foo.yml
+
+# connect, and download messages
+pywis-pubsub subscribe --config foo.yml --download
+
+# connect, and filter messages by geometry
+pywis-pubsub subscribe --config foo.yml --bbox=-142,42,-52,84
+
+# connect, and filter messages by geometry, increase debugging verbosity
+pywis-pubsub subscribe --config foo.yml --bbox=-142,42,-52,84 --verbosity=DEBUG
+```
+
+### Using the API
+
+```python
+# Python API examples go here
+
+from pywis_pubsub.subscrirbe import MQTTPubSubClient
+
+options = {
+    'download_dir': '/tmp',
+    'bbox': [-90, -180, 90, 180]
+}
+topics = [
+    'topic1',
+    'topic2'
+]
+
+m = MQTTPubSubClient('mqtt://localhost:1883', options)
+m.sub(topics)
+```
+
+## Development
+
+### Running Tests
+
+```bash
+# install dev requirements
+pip3 install -r requirements-dev.txt
+
+# run tests like this:
+python3 tests/run_tests.py
+
+# or this:
+python3 setup.py test
+```
+
+## Releasing
+
+```bash
+rm -fr build dist *.egg-info
+python3 setup.py sdist bdist_wheel --universal
+twine upload dist/*
+```
+
+### Code Conventions
+
+* [PEP8](https://www.python.org/dev/peps/pep-0008)
+
+### Bugs and Issues
+
+All bugs, enhancements and issues are managed on [GitHub](https://github.com/wmo-im/pywis-pubsub/issues).
+
+## Contact
+
+* [Antje Schremmer](https://github.com/antje-s)
+* [Tom Kralidis](https://github.com/tomkralidis)

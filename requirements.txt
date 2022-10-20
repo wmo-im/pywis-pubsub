@@ -1,9 +1,4 @@
 click
-jsonschema
 paho-mqtt
-parse
-pika
 pyyaml
-requests
-urllib3
-websocket-client
+shapely
