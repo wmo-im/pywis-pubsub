@@ -170,10 +170,8 @@ def on_message_handler(client, userdata, msg):
             LOGGER.debug('Message geometry not within bbox; skipping')
             return
 
-    print(userdata)
-
     if userdata.get('path') is not None:
-        basepath = userdata['path'] / msg_dict['properties']['hierarchy']  # noqa
+        basepath = userdata['path'] / msg_dict['properties']['hierarchy']
         filename = basepath / msg_dict['properties']['instance_identifier']
 
         LOGGER.debug(f'Saving data to {filename}')

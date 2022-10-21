@@ -19,7 +19,11 @@
 #
 ###############################################################################
 
+import logging
+
 from shapely import geometry
+
+LOGGER = logging.getLogger(__name__)
 
 
 def is_message_within_bbox(message_geometry: dict, bbox_filter: list) -> bool:
@@ -35,4 +39,9 @@ def is_message_within_bbox(message_geometry: dict, bbox_filter: list) -> bool:
     geometry1 = geometry.shape(message_geometry)
     geometry2 = geometry.box(*bbox_filter)
 
-    return geometry1.within(geometry2)
+    if geometry1.type == 'Point':
+        LOGGER.debug('Testing within')
+        return geometry1.within(geometry2)
+    else:  # line, polygon
+        LOGGER.debug('Testing intersects')
+        return geometry1.intersects(geometry2)

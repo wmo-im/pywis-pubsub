@@ -24,6 +24,11 @@ pip3 install pywis-pubsub
 Dependencies are listed in [requirements.txt](requirements.txt). Dependencies
 are automatically installed during pywis-pubsub installation.
 
+#### Windows installations
+Note that you will need Cython and [Shapely Windows wheels](https://pypi.org/project/shapely/#files) for windows for your architecture
+prior to installing pywis-pubsub.
+
+
 ### Installing pywis-pubsub
 
 ```bash
@@ -48,16 +53,16 @@ vi local.yml # update accordingly
 pywis-pubsub --version
 
 # connect, and simply echo messages
-pywis-pubsub subscribe --config foo.yml
+pywis-pubsub subscribe --config local.yml
 
 # connect, and download messages
-pywis-pubsub subscribe --config foo.yml --download
+pywis-pubsub subscribe --config local.yml --download
 
 # connect, and filter messages by geometry
-pywis-pubsub subscribe --config foo.yml --bbox=-142,42,-52,84
+pywis-pubsub subscribe --config local.yml --bbox=-142,42,-52,84
 
 # connect, and filter messages by geometry, increase debugging verbosity
-pywis-pubsub subscribe --config foo.yml --bbox=-142,42,-52,84 --verbosity=DEBUG
+pywis-pubsub subscribe --config local.yml --bbox=-142,42,-52,84 --verbosity=DEBUG
 ```
 
 ### Using the API
@@ -65,10 +70,10 @@ pywis-pubsub subscribe --config foo.yml --bbox=-142,42,-52,84 --verbosity=DEBUG
 ```python
 # Python API examples go here
 
-from pywis_pubsub.subscrirbe import MQTTPubSubClient
+from pywis_pubsub.subscribe import MQTTPubSubClient
 
 options = {
-    'download_dir': '/tmp',
+    'path': '/tmp',
     'bbox': [-90, -180, 90, 180]
 }
 topics = [
