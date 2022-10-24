@@ -6,6 +6,9 @@ broker: mqtts://localhost:1883
 topics:
     - '#'
 
+# whether to verify data
+verify_data: true
+
 # local download directory
 storage:
     type: fs

@@ -145,3 +145,15 @@ def safe_url(url):
         safe_url = f'{safe_url}:{u.port}'
 
     return safe_url
+
+
+def get_userdir() -> str:
+    """
+    Helper function to get userdir
+
+    :returns: user's home directory
+    """
+
+    return Path.home() / '.pywis-pubsub'
+
+MESSAGE_SCHEMA = get_userdir() / 'wis2-notification-message' / 'WIS2_Message_Format_Schema.yaml'  # noqa

@@ -21,6 +21,8 @@
 
 import base64
 from copy import deepcopy
+import enum
+import hashlib
 import json
 import logging
 from pathlib import Path
@@ -33,10 +35,16 @@ import click
 from paho.mqtt import client as mqtt_client
 
 from pywis_pubsub import cli_options
-from pywis_pubsub.geometry import is_message_within_bbox
 from pywis_pubsub import util
+from pywis_pubsub.geometry import is_message_within_bbox
+from pywis_pubsub.validation import validate_message
 
 LOGGER = logging.getLogger(__name__)
+
+
+class VerificationMethods(enum.Enum):
+    md5 = 'md5'
+    sha512 = 'sha512'
 
 
 class MQTTPubSubClient:
@@ -128,29 +136,70 @@ class MQTTPubSubClient:
         return '<MQTTPubSubClient>'
 
 
-def get_data(msg_json: dict) -> bytes:
+def get_canonical_link(links: list):
+    """
+    Helper function to derive canonical link from a list of link objects
+
+    :param links: `list` of link `dict`s
+
+    :returns: `dict` of first canonical link object found
+    """
+
+    try:
+        return list(filter(lambda d: d['rel'] == 'canonical', links))[0]
+    except IndexError:
+        LOGGER.error('No canonical link found')
+        return {}
+
+
+def get_data(msg_dict: dict) -> bytes:
     """
     Data downloading functionality
 
-    :param msg_json: `dict` of notification message
+    :param msg_dict: `dict` of notification message
 
     :returns: `bytes` of data
     """
 
-    canonical_link = list(filter(lambda d: d['rel'] == 'canonical', msg_json['links']))  # noqa
+    canonical_link = get_canonical_link(msg_dict['links'])
 
     if canonical_link:
-        LOGGER.debug('Found canonical link: {canonical_link}')
+        LOGGER.debug(f'Found canonical link: {canonical_link}')
 
-    if 'content' in msg_json and 'value' in msg_json['content']:
+    if 'content' in msg_dict and 'value' in msg_dict['content']:
         LOGGER.debug('Decoding from inline data')
-        data = base64.b64decode(msg_json['content']['value'])
+        data = base64.b64decode(msg_dict['content']['value'])
     else:
         LOGGER.debug(f"Downloading from {canonical_link['href']}")
-        with urllib.request.urlopen(canonical_link['href']) as f:
-            data = f.read().decode('utf-8')
+        try:
+            with urllib.request.urlopen(canonical_link['href']) as f:
+                data = f.read().decode('utf-8')
+        except urllib.error.HTTPError as err:
+            LOGGER.error(f"download error ({canonical_link['href']}): {err}")
+            raise
 
     return data
+
+
+def data_verified(data: bytes, size: int, method: VerificationMethods,
+                  value: str):
+    """
+    Verify integrity of data given a hashing method
+
+    :param data: data to verify
+    :param size: `int` size of data
+    :param method: method of verification (`VerificationMethods`)
+                   default is sha512
+    :param value: value of hashing result
+
+    :returns: `bool` of whether data is verified
+    """
+
+    LOGGER.debug(f'Verification method is {method}')
+    data_value = getattr(hashlib, method)(data).hexdigest()
+
+    LOGGER.debug('Comparing checksum and data size')
+    return data_value == value and len(data) == size
 
 
 def on_message_handler(client, userdata, msg):
@@ -158,6 +207,13 @@ def on_message_handler(client, userdata, msg):
 
     msg_dict = json.loads(msg.payload)
     msg_json = json.dumps(msg_dict, indent=4)
+
+    if userdata.get('validate_message', False):
+        LOGGER.debug('Validating message')
+        success, err = validate_message(msg_dict)
+        if not success:
+            LOGGER.error(f'Message is not a valid notification: {err}')
+            return
 
     LOGGER.debug(f'Topic: {msg.topic}')
     LOGGER.debug(f'Raw message:\n{msg_json}')
@@ -171,11 +227,35 @@ def on_message_handler(client, userdata, msg):
             return
 
     if userdata.get('path') is not None:
-        basepath = userdata['path'] / msg_dict['properties']['hierarchy']
-        filename = basepath / msg_dict['properties']['instance_identifier']
+        try:
+            basepath = userdata['path'] / msg_dict['properties']['hierarchy']
+            filename = basepath / msg_dict['properties']['instance_identifier']
+        except KeyError as err:
+            LOGGER.warning(f'Missing property: {err}')
+            link = Path(get_canonical_link(msg_dict['links'])['href'])
+            basepath = link.parent
+            filename = link.name
 
         LOGGER.debug(f'Saving data to {filename}')
-        data = get_data(msg_dict)
+        try:
+            data = get_data(msg_dict)
+        except Exception as err:
+            LOGGER.error(err)
+            return
+
+        if ('integrity' in msg_dict['properties'] and
+                userdata.get('verify_data', False)):
+            LOGGER.debug('Verifying data')
+
+            method = msg_dict['properties']['integrity']['method']
+            value = msg_dict['properties']['integrity']['value']
+            size = msg_dict['properties']['size']
+
+            if not data_verified(data, size, method, value):
+                LOGGER.error('Data verification failed; not saving')
+                return
+            else:
+                LOGGER.debug('Data verification passed')
 
         LOGGER.debug(f'Creating directory {basepath}')
         Path(basepath).mkdir(parents=True, exist_ok=True)
@@ -194,6 +274,8 @@ def on_message_handler(client, userdata, msg):
 def subscribe(ctx, config, download, bbox=[], verbosity='NOTSET'):
     """Subscribe to a broker/topic and optionally download data"""
 
+    if config is None:
+        raise click.ClickException('missing --config/-c')
     config = util.yaml_load(config)
 
     broker = config.get('broker')
@@ -206,6 +288,9 @@ def subscribe(ctx, config, download, bbox=[], verbosity='NOTSET'):
 
     if download:
         options['path'] = Path(config['storage'].get('path'))
+
+    options['verify_data'] = config.get('verify_data', False)
+    options['validate_message'] = config.get('validate_message', False)
 
     client = MQTTPubSubClient(broker, options)
     click.echo(f'Connected to broker {client.broker_safe_url}')
