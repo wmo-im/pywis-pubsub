@@ -174,7 +174,7 @@ def get_data(msg_dict: dict) -> bytes:
         LOGGER.debug(f"Downloading from {canonical_link['href']}")
         try:
             with urllib.request.urlopen(canonical_link['href']) as f:
-                data = f.read().decode('utf-8')
+                data = f.read()
         except urllib.error.HTTPError as err:
             LOGGER.error(f"download error ({canonical_link['href']}): {err}")
             raise
