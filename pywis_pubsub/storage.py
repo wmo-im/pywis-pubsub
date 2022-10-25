@@ -19,45 +19,73 @@
 #
 ###############################################################################
 
-    if userdata.get('download') is not None:
-        basepath = userdata['download_dir'] / msg_dict['properties']['hierarchy']  # noqa
-        filename = basepath / msg_dict['properties']['instance_identifier']
+from abc import ABC, abstractmethod
+import logging
+from pathlib import Path
 
-        LOGGER.debug(f'Saving data to {filename}')
-        data = get_data(msg_dict)
+LOGGER = logging.getLogger(__name__)
 
-        LOGGER.debug(f'Creating directory {basepath}')
-        Path(basepath).mkdir(parents=True, exist_ok=True)
 
-        LOGGER.debug(f'Saving data to {filename}')
-        with open(filename, 'wb') as fh:
+class Storage(ABC):
+    # @abstractmethod
+    def __init__(self, defs):
+        self.type = defs.get('type')
+        self.options = defs.get('options')
+
+    @abstractmethod
+    def save(self, data: bytes, filename: Path) -> bool:
+        """
+        Save data to storage
+
+        :param data: `byte` of data
+        :param filename: `str` of filename
+
+        :returns: `bool` of save result
+        """
+
+        pass
+
+
+class FileSystem(Storage):
+    def save(self, data: bytes, filename: Path) -> bool:
+
+        filepath = Path(self.options['path']) / filename
+
+        LOGGER.debug(f'Creating directory {filepath.parent}')
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        LOGGER.debug(f'Saving data to {filepath}')
+        with filepath.open('wb') as fh:
             fh.write(data)
 
+        LOGGER.debug('Data saved')
 
-@click.command()
-@click.pass_context
-@cli_options.OPTION_CONFIG
-@cli_options.OPTION_VERBOSITY
-@click.option('--bbox', '-b', help='Bounding box filter')
-@click.option('--download', '-d', is_flag=True, help='Download data')
-def subscribe(ctx, config, download, bbox=[], verbosity='NOTSET'):
-    """Subscribe to a broker/topic and optionally download data"""
+        return True
 
-    config = util.yaml_load(config)
 
-    broker = config.get('broker')
-    qos = int(config.get('qos', 1))
-    topics = config.get('topics', [])
-    options = {}
+class S3(Storage):
+    def save(self, data: bytes, filename: Path) -> bool:
 
-    if bbox:
-        options['bbox'] = [float(i) for i in bbox.split(',')]
+        import boto3
+        from botocore.exceptions import ClientError
 
-    if download:
-        options['download_dir'] = config.get('download_dir')
+        s3_url = self.options['url']
+        s3_bucket = self.options['bucket']
 
-    client = MQTTPubSubClient(broker, options)
-    click.echo(f'Connected to broker {client.broker_safe_url}')
+        s3_client = boto3.client('s3', endpoint_url=s3_url)
 
-    click.echo(f'Subscribing to topics {topics}')
-    client.sub(topics, qos)
+        try:
+            s3_client.put_object(data, s3_bucket, filename)
+        except ClientError as err:
+            LOGGER.error(err)
+            return False
+
+        LOGGER.debug('Data saved')
+
+        return True
+
+
+STORAGES = {
+    'fs': FileSystem,
+    'S3': S3
+}

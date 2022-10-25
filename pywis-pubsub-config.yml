@@ -9,7 +9,18 @@ topics:
 # whether to verify data
 verify_data: true
 
-# local download directory
+# whether to validate message against schema
+validate_message: true
+
+# storage: filesystem
 storage:
     type: fs
-    path: /tmp/foo/bar
+    options:
+        path: /tmp/foo/bar
+
+# storage: s3
+#storage:
+#    type: S3
+#    options:
+#        url: http://localhost:9001
+#        bucket: some-bucket

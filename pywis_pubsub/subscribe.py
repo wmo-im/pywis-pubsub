@@ -37,6 +37,7 @@ from paho.mqtt import client as mqtt_client
 from pywis_pubsub import cli_options
 from pywis_pubsub import util
 from pywis_pubsub.geometry import is_message_within_bbox
+from pywis_pubsub.storage import STORAGES
 from pywis_pubsub.validation import validate_message
 
 LOGGER = logging.getLogger(__name__)
@@ -226,18 +227,10 @@ def on_message_handler(client, userdata, msg):
             LOGGER.debug('Message geometry not within bbox; skipping')
             return
 
-    if userdata.get('path') is not None:
+    if userdata.get('storage') is not None:
+        LOGGER.debug('Saving data')
         try:
-            basepath = userdata['path'] / msg_dict['properties']['hierarchy']
-            filename = basepath / msg_dict['properties']['instance_identifier']
-        except KeyError as err:
-            LOGGER.warning(f'Missing property: {err}')
-            link = Path(get_canonical_link(msg_dict['links'])['href'])
-            basepath = link.parent
-            filename = link.name
-
-        LOGGER.debug(f'Saving data to {filename}')
-        try:
+            LOGGER.debug('Downloading data')
             data = get_data(msg_dict)
         except Exception as err:
             LOGGER.error(err)
@@ -257,12 +250,18 @@ def on_message_handler(client, userdata, msg):
             else:
                 LOGGER.debug('Data verification passed')
 
-        LOGGER.debug(f'Creating directory {basepath}')
-        Path(basepath).mkdir(parents=True, exist_ok=True)
+        try:
+            basepath = Path(msg_dict['properties']['hierarchy'])
+            filename = basepath / msg_dict['properties']['instance_identifier']
+        except KeyError as err:
+            LOGGER.warning(f'Missing property: {err}')
+            link = Path(get_canonical_link(msg_dict['links'])['href'])
+            basepath = link.parent
+            filename = link.name
 
-        LOGGER.debug(f'Saving data to {filename}')
-        with open(filename, 'wb') as fh:
-            fh.write(data)
+        storage_class = STORAGES[userdata.get('storage').get('type')]
+        storage_object = storage_class(userdata['storage'])
+        storage_object.save(data, filename)
 
 
 @click.command()
@@ -287,7 +286,7 @@ def subscribe(ctx, config, download, bbox=[], verbosity='NOTSET'):
         options['bbox'] = [float(i) for i in bbox.split(',')]
 
     if download:
-        options['path'] = Path(config['storage'].get('path'))
+        options['storage'] = config['storage']
 
     options['verify_data'] = config.get('verify_data', False)
     options['validate_message'] = config.get('validate_message', False)
