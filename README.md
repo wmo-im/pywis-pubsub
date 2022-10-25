@@ -73,7 +73,10 @@ pywis-pubsub subscribe --config local.yml --bbox=-142,42,-52,84 --verbosity=DEBU
 from pywis_pubsub.subscribe import MQTTPubSubClient
 
 options = {
-    'path': '/tmp',
+    'storage': {
+        'type': 'fs',
+        'path': '/tmp'
+    },
     'bbox': [-90, -180, 90, 180]
 }
 topics = [
