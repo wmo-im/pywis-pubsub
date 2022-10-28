@@ -237,7 +237,7 @@ def on_message_handler(client, userdata, msg):
             return
 
         if ('integrity' in msg_dict['properties'] and
-                userdata.get('verify_data', False)):
+                userdata.get('verify_data', True)):
             LOGGER.debug('Verifying data')
 
             method = msg_dict['properties']['integrity']['method']
@@ -288,7 +288,7 @@ def subscribe(ctx, config, download, bbox=[], verbosity='NOTSET'):
     if download:
         options['storage'] = config['storage']
 
-    options['verify_data'] = config.get('verify_data', False)
+    options['verify_data'] = config.get('verify_data', True)
     options['validate_message'] = config.get('validate_message', False)
 
     client = MQTTPubSubClient(broker, options)
