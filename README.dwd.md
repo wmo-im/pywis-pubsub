@@ -18,7 +18,7 @@ config files for sub and download are under mqp-subscriber/configFiles
 ## dwd.txt
 
 category | config field | default | description | example
--------------|---------|-------------|--------
+---------|--------------|---------|-------------|--------
 "wis2box" | "wis2box" | "False" | Use py-scripts inside a docker container or standalone | "True" (if inside docker container)
 "subscription" | "toSubscribe" | "False" | Subscribe to a message broker (must be set to "True") | "True"
 "subscription" | "sub_host" | NO default | Hostname of the message broker you want to subscribe to | "oflkd011.dwd.de"
