@@ -199,8 +199,9 @@ def write_toDownload(msg_id, url,
                      topic, integrity,
                      integrity_method,
                      content_encoding,
-                     content_value):
-    global monitor_metrics, monMsgContent, monToDoDuplicate, monMsgCountryErr, monToDo, numThreads
+                     content_value,
+                     topic_country):
+    global numThreads, monMsgCountry, monMsgCountryErr, monMsgToDo, monMsgCountryDuplicate, monMsgContent, monMsgToDoDuplicate, metric_countries
     numThreads = numThreads + 1
     fname = "missingFilename"
     if download_orgFilename == "True":
@@ -216,8 +217,9 @@ def write_toDownload(msg_id, url,
         targetDir = download_targetDir
     else:
         targetDir = download_targetDir + topicSubtree
+    targetDir_path = Path(targetDir)
     if not os.path.exists(targetDir):
-        os.makedirs(targetDir, exist_ok=True)
+        targetDir_path.mkdir(parents=True)
     downloadFile = (targetDir + '/' + fname).replace('//', '/')
     toDownloadFile = fname.split(".")[0] + ".json"
     toDownloadDir_path = Path(download_toDoDir)
@@ -243,7 +245,8 @@ def write_toDownload(msg_id, url,
         newDownload.write(json.dumps(fileContentJSON, indent=4))
         newDownload.close()
         if monitor_metrics == "True":
-            monMsgContent.inc()
+            monMsgContent.labels(topic_country).inc()
+            monMsgContent.labels("ALL").inc()
     else:
         if (fileContentJSON["downloadFilename"] != "" and
            fileContentJSON["downloadFilename"] is not None and
@@ -252,33 +255,38 @@ def write_toDownload(msg_id, url,
             json_already_there = os.path.exists(os.path.join(
                                                 download_toDoDir,
                                                 toDownloadFile))
+            toDownloadFile_inWork = "." + str(toDownloadFile)
+            if json_already_there is False:
+                json_already_there = os.path.exists(os.path.join(
+                                                download_toDoDir,
+                                                toDownloadFile_inWork))
             if json_already_there:
-                monToDoDuplicate.labels("ALL").inc() 
+                monMsgToDoDuplicate.labels("ALL").inc() 
                 LOG.error(" - json already written, message msg_id is: " 
                         + str(msg_id) + ", data_id: " + str(data_identifier))
-            newDownload = open(os.path.join(download_toDoDir,
-                                            toDownloadFile), "w")
-            newDownload.write(json.dumps(fileContentJSON, indent=4))
-            if monitor_metrics == "True":
-                monToDo.inc()
-            newDownload.close()
+            else:
+                newDownload = open(os.path.join(download_toDoDir,
+                                            toDownloadFile_inWork), "w")
+                newDownload.write(json.dumps(fileContentJSON, indent=4))
+                shutil.move(os.path.join(download_toDoDir,toDownloadFile_inWork), os.path.join(download_toDoDir,toDownloadFile))
+                if monitor_metrics == "True":
+                    monMsgToDo.labels(topic_country).inc()
+                    monMsgToDo.labels("ALL").inc()
+                newDownload.close()
         else:
-            LOG.error(" - missing downloadFilename\
+            LOG.error(" - missing downloadFilename/sourceUrl\
                        for message ('"
                       + str(msg_id) + "') of topic: " + topic)
             if monitor_metrics == "True":
-                if "swe/smhi" in topic:
-                    monMsgCountryErr.labels("SWEDEN").inc()
+                monMsgCountryErr.labels(topic_country).inc()
                 monMsgCountryErr.labels("ALL").inc()
     if numThreads > 0:
         numThreads = numThreads - 1
 
 
 # added to check if data_id in local memory - already downloaded
-def alreadyDownloaded(my_data_id, my_topic):
-    global local_memory
-    global localMem_integrity
-    global monitor_metrics, monMsgCountryDuplicate
+def alreadyDownloaded(my_data_id, my_topic, topic_country):
+    global local_memory, localMem_integrity, monMsgCountryDuplicate
     already_downloaded = False
     if "/" in my_data_id:
         my_data_id = my_data_id.replace("/", dataId_replace)
@@ -288,34 +296,31 @@ def alreadyDownloaded(my_data_id, my_topic):
         with open(memory_file, "r") as myCacheFile:
             localMem_integrity = myCacheFile.read()
         if monitor_metrics == "True":
-            if "swe/smhi" in my_topic:
-                monMsgCountryDuplicate.labels("SWEDEN").inc()
+            monMsgCountryDuplicate.labels(topic_country).inc()
             monMsgCountryDuplicate.labels("ALL").inc()
     return already_downloaded
 
 
 # checks before writing JSON for toDownload
-def checkBeforeWriteDownload(my_data_id, msg_integrity, my_topic, my_url):
-    global local_memory, writeJsonToDownload, monMsgCountryErr, monitor_metrics
+def checkBeforeWriteDownload(my_data_id, msg_integrity, my_topic, my_url, topic_country):
+    global local_memory, monMsgCountryErr
     writeJsonToDownload = False
     alreadyInMem = False
     # missing dat_identifier
     if my_data_id == "":
-        LOG.error(" - missing data_identifer in message, \
-                  toDownload NOT written")
+        LOG.error(" - missing data id in message, "
+                  + "toDownload JSON NOT written")
         if monitor_metrics == "True":
-            if "swe/smhi" in my_topic:
-                monMsgCountryErr.labels("SWEDEN").inc()
+            monMsgCountryErr.labels(topic_country).inc()
             monMsgCountryErr.labels("ALL").inc()
     else:
         if my_url == "":
             LOG.error(" - missing url in message, NO toDownload written")
             if monitor_metrics == "True":
-                if "swe/smhi" in my_topic:
-                    monMsgCountryErr.labels("SWEDEN").inc()
+                monMsgCountryErr.labels(topic_country).inc()
                 monMsgCountryErr.labels("ALL").inc()
         else:
-            alreadyInMem = alreadyDownloaded(my_data_id, my_topic)
+            alreadyInMem = alreadyDownloaded(my_data_id, my_topic, topic_country)
             if alreadyInMem:
                 if msg_integrity == localMem_integrity:
                     writeJsonToDownload = False
@@ -343,26 +348,32 @@ def checkBeforeWriteDownload(my_data_id, msg_integrity, my_topic, my_url):
                               + " NOT in configured whitelist")
                     writeJsonToDownload = False
                     if monitor_metrics == "True":
-                        if "swe/smhi" in my_topic:
-                            monMsgCountryErr.labels("SWEDEN").inc()
+                        monMsgCountryErr.labels(topic_country).inc()
                         monMsgCountryErr.labels("ALL").inc()
+    return writeJsonToDownload
 
 
 def readMSG(MSG, myTopic):
-    global monitor_metrics, monCountry
+    global monitor_metrics, monMsgCountry
     showTimeLag = "False"
     if MSG != "":
+        # msg_id
+        msg_id = str(MSG["id"])
         # pubTime and timeLag
         if "properties" in MSG.keys():
             msg_pubtime = ""
-            if "publication_datetime" in MSG["properties"].keys():
-                msg_pubtime = MSG["properties"]["publication_datetime"]
-            if "pub_datetime" in MSG["properties"].keys():
-                msg_pubtime = MSG["properties"]["pub_datetime"]
-            if "pubTime" in MSG["properties"].keys():
-                msg_pubtime = MSG["properties"]["pubTime"]
             if "pubtime" in MSG["properties"].keys():
                 msg_pubtime = MSG["properties"]["pubtime"]
+            else:
+                if "publication_datetime" in MSG["properties"].keys():
+                    LOG.error(" - 'publication_datetime' used instead of 'pubtime'")
+                    msg_pubtime = MSG["properties"]["publication_datetime"]
+                if "pub_datetime" in MSG["properties"].keys():
+                    LOG.error(" - 'pub_datetime' used instead of 'pubtime'")
+                    msg_pubtime = MSG["properties"]["pub_datetime"]
+                if "pubTime" in MSG["properties"].keys():
+                    LOG.error(" - 'pubTime' used instead of 'pubtime'")
+                    msg_pubtime = MSG["properties"]["pubTime"]
             if msg_pubtime != "":
                 time_lag = timeLag(msg_pubtime)
                 showTimeLag = "True"
@@ -387,19 +398,26 @@ def readMSG(MSG, myTopic):
                 if item["rel"] == "canonical":
                     url = item["href"]
             if url == "":
-                LOG.info(" - no canonical href in links"
-                         + " use first href value instead")
+                LOG.info(" - no canonical href in links in msg (msg_id is: "
+                         + str(msg_id) + ", use first href value instead")
                 url = urlList[0]["href"]
         if url == "":
             LOG.error(" - no links in message: "
                       + str(json.dumps(MSG, indent=4)))
         # integrity
         integrity = ""
+        integrity_method = ""
         if "integrity" in MSG["properties"].keys():
-            integrity_method = MSG["properties"]["integrity"]["method"]
-            integrity = MSG["properties"]["integrity"]["value"]
-        else:
-            integrity_method = ""
+            if "value" in MSG["properties"]["integrity"].keys():
+                integrity = MSG["properties"]["integrity"]["value"]
+            else:
+                LOG.error(" - integrity included in message but value is missing.")
+                LOG.debug(" - integrity/value missing, message was: " + str(json.dumps(MSG, indent=4)))
+            if "method" in MSG["properties"]["integrity"].keys():
+                integrity_method = MSG["properties"]["integrity"]["method"]
+            else:
+                LOG.error(" - integrity included in message but method is missing.")
+                LOG.debug(" - integrity/method missing, message was: " + str(json.dumps(MSG, indent=4)))
         if integrity_method != "":
             if (integrity_method != "md5" and
                integrity_method != "MD5" and
@@ -430,13 +448,15 @@ def readMSG(MSG, myTopic):
         data_identifier = ""
         if "data_id" in MSG["properties"]:
             data_identifier = MSG["properties"]["data_id"]
-            data_identifier = data_identifier.replace("//", "/")
         else:
-            if "instance_identifier" in MSG["properties"]:
-                data_identifier = MSG["properties"]["instance_identifier"]
-                data_identifier = data_identifier.replace("//", "/")
-        # msg_id
-        msg_id = str(MSG["id"])
+            if "data-id" in MSG["properties"]:
+                LOG.error(" - 'data-id' instead of 'data_id' used in message")
+            else:
+                if "instance_identifier" in MSG["properties"]:
+                    LOG.error(" - 'instance_identifier' instead of 'data_id' used in message")
+                    data_identifier = MSG["properties"]["instance_identifier"]
+        if "//" in data_identifier:
+            data_identifier = data_identifier.replace("//", "/")
         # write msg to log
         LOG.debug(" - message topic:        " + str(myTopic))
         LOG.debug(" - message data id:      " + str(data_identifier))
@@ -449,11 +469,12 @@ def readMSG(MSG, myTopic):
             print("New message:     " + str(json.dumps(MSG, indent=4)))
         # msg_store
         if msg_store is not None and msg_store != "":
-            LOG.info(" - write MSG to msg_store...")
+            LOG.info(" - write MSG for data_id: "
+                    + str(data_identifier) + " to msg_store " + str(msg_store))
             if data_identifier == "":
                 fname = str(msg_id)
-                LOG.error(" - MISSING data_id in message: "
-                          + str(msg_id))
+                LOG.error(" - MISSING data id in message: "
+                        + "(msg_id: " + str(msg_id) + ")")
             else:
                 fname = data_identifier.replace("/", "___")
             toFilename = msg_store + str(fname)
@@ -463,27 +484,38 @@ def readMSG(MSG, myTopic):
             toFile = open(toFilename, "w")
             toFile.write(str(json.dumps(MSG, indent=4)))
             toFile.close()
+        # monitoring metrics
+        if "/" in myTopic:
+            topic_country = myTopic.split("/")[4]
+            LOG.debug(" - topic_country is: " + str(topic_country))
+        else:
+            LOG.error(" - MISSING '/' in topic, received message: "
+                     + str(json.dumps(MSG, indent=4)))
+        if topic_country not in metric_countries:
+                metric_countries.append(topic_country)
+                init_metric_label(topic_country)
         # write JSON for toDownload
         if withDownload == "True":
             LOG.debug(" - starting checks before download")
-            checkBeforeWriteDownload(data_identifier, integrity, myTopic, url)
+            writeJsonToDownload = checkBeforeWriteDownload(data_identifier, integrity, myTopic, url, topic_country)
             if writeJsonToDownload is True:
                 if useAria2 == "True":
                     LOG.info(" - start download, send to arai2 url: "
                              + str(url))
                     send2aria(aria2_http_url, url, str(data_identifier))
                 else:
-                    LOG.info(" - write JSON for toDownload...")
+                    LOG.info(" - write JSON for toDownload for msg_id " + str(msg_id))
                     if numThreads < 100:
                         createNewWriteJsonThread(msg_id, url, data_identifier,
                                      myTopic, integrity, integrity_method,
-                                     content_encoding, content_value)
+                                     content_encoding, content_value, topic_country)
                         if monitor_metrics == "True":
-                            if "swe/smhi" in myTopic:
-                                monCountry.labels("SWEDEN").inc()
+                            monMsgCountry.labels(topic_country).inc()
                     else:
                         LOG.warning(" - all threads for write json in use")
                         time.sleep(2)
+            else:
+                LOG.error(" - writeJsonToDownload was False, NO toDownload written")
 
 
 def createNewWriteJsonThread(msg_id, url,
@@ -491,8 +523,9 @@ def createNewWriteJsonThread(msg_id, url,
                              topic, integrity,
                              integrity_method,
                              content_encoding,
-                             content_value):
-    global monitor_metrics, monMsgContent, monToDoDuplicate, monMsgCountryErr, monToDo
+                             content_value,
+                             topic_country):
+    global monitor_metrics, monMsgContent, monMsgToDoDuplicate, monMsgCountryErr, monMsgToDo
     if (url == "" or msg_id == "" or data_identifier == "" or topic == ""):
         LOG.error(" - createNewWriteJsonThread: missing url, \
                   msg_id, topic or data_id value")
@@ -510,26 +543,55 @@ def createNewWriteJsonThread(msg_id, url,
                                     topic, integrity,
                                     integrity_method,
                                     content_encoding,
-                                    content_value))
+                                    content_value,
+                                    topic_country))
         writeJson_thread.start()
+
+
+def init_counter(thisDay):
+    global msg_counter_days, monMsgCountry, monMsgCountryErr, monMsgCountryDuplicate, monMsgToDo, monMsgToDoDuplicate, monMsgContent, metric_countries
+    if thisDay not in msg_counter_days:
+        msg_counter_days.append(thisDay)
+        if monitor_metrics == "True":
+            for country in metric_countries:
+                monMsgCountry.labels(country).set(0)
+                monMsgCountryErr.labels(country).set(0)
+                monMsgCountryDuplicate.labels(country).set(0)
+                monMsgToDo.labels(country).set(0)
+                monMsgToDoDuplicate.labels(country).set(0)
+                monMsgContent.labels(country).set(0)
+
+
+def init_metric_label(country):
+    if monitor_metrics == "True":
+        monMsgCountry.labels(country).set(0)
+        monMsgCountryErr.labels(country).set(0)
+        monMsgCountryDuplicate.labels(country).set(0)
+        monMsgToDo.labels(country).set(0)
+        monMsgToDoDuplicate.labels(country).set(0)
+        monMsgContent.labels(country).set(0)
 
 
 # message received
 def on_mqtt_message(client, userdata, message):
-    global integrity_method, download_targetDir, ws, aria2_http_url, monCountry, monMsgCountryErr
-    LOG.info("---- NEW MESSAGE ----")
+    global integrity_method, download_targetDir, ws, aria2_http_url, monMsgCountry, monMsgCountryErr, msg_counter_days
+    # add new day as item to msg_counter_days and reset metric counters each day
+    onMsg_time = datetime.now()
+    onMsg_time_print = onMsg_time.strftime('%Y%m%d')
+    init_counter(onMsg_time_print)
+    LOG.debug("---- NEW MESSAGE ----")
     try:
         topic = message.topic
         msg = json.loads(message.payload.decode("utf-8"))
-#       validate(instance=msg, schema=schema)
-#       LOG.debug("validated msg: " + str(topic))
-#   except jsonschema.exceptions.ValidationError as err:
-#       LOG.error("validation error occured for msg: "
-#                 + message.payload.decode("utf-8"))
-#       LOG.error(err)
+        # validate(instance=msg, schema=schema)
+        # LOG.debug("validated msg: " + str(topic))
         if monitor_metrics == "True":
-            monCountry.labels("ALL").inc()
+            monMsgCountry.labels("ALL").inc()
         readMSG(msg, topic)
+    except jsonschema.exceptions.ValidationError as err:
+        LOG.error("validation error occured for msg: "
+                  + message.payload.decode("utf-8"))
+        LOG.error(err)
     except Exception as e:
         msg = ""
         LOG.error(" - json loads error occured for msg: "
@@ -587,32 +649,24 @@ def connect_prometheus(prometheus_port):
 
 
 def init_metric():
-    global monCountry, monMsgCountryErr, monToDo, monMsgCountryDuplicate, monMsgContent, monToDoDuplicate
+    global monMsgCountry, monMsgCountryErr, monMsgToDo, monMsgCountryDuplicate, monMsgContent, monMsgToDoDuplicate
     connect_prometheus(PROMETHEUS_PORT)
     REGISTRY.unregister(PROCESS_COLLECTOR)
     REGISTRY.unregister(PLATFORM_COLLECTOR)
     REGISTRY.unregister(REGISTRY._names_to_collectors['python_gc_objects_collected_total'])
     
-    monCountry = Gauge('msg_received', 'Amount of messages received from Country',["Country"])
-    monCountry.labels("SWEDEN").set(0)
-    monCountry.labels("ALL").set(0)
-
-    monMsgCountryErr = Gauge('msg_received_errors', 'Amount of messages received from Country with errors',["Country"])
-    monMsgCountryErr.labels("SWEDEN").set(0)
+    monMsgCountry = Gauge('msg_received', 'Amount of messages received from Country', ["Country"])
+    monMsgCountry.labels("ALL").set(0)
+    monMsgCountryErr = Gauge('msg_received_errors', 'Amount of messages received from country with errors', ["Country"])
     monMsgCountryErr.labels("ALL").set(0)
-
-    monMsgCountryDuplicate = Gauge('msg_received_duplicate', 'Amount of messages received from Country as duplicate',["Country"])
-    monMsgCountryDuplicate.labels("SWEDEN").set(0)
+    monMsgCountryDuplicate = Gauge('msg_received_duplicate', 'Amount of messages received from country as duplicate', ["Country"])
     monMsgCountryDuplicate.labels("ALL").set(0)
-
-    monToDo = Gauge('msg_toDoJson_written', 'Amount of written toDo json files')
-    monToDo.set(0)
-
-    monToDoDuplicate = Gauge('msg_toDoJson_duplicate', 'Amount of NOT written Json files as they are duplicates',["Country"])
-    monToDoDuplicate.labels("ALL").set(0)
-
-    monMsgContent = Gauge('msg_received_withcontent', 'Amount of messages received with content in message')
-    monMsgContent.set(0)
+    monMsgToDo = Gauge('msg_toDoJson_written', 'Amount of written toDo json files for country', ["Country"])
+    monMsgToDo.labels("ALL").set(0)
+    monMsgToDoDuplicate = Gauge('msg_toDoJson_duplicate', 'Amount of NOT written Json files as they are duplicates', ["Country"])
+    monMsgToDoDuplicate.labels("ALL").set(0)
+    monMsgContent = Gauge('msg_received_withcontent', 'Amount of messages received with content in message', ["Country"])
+    monMsgContent.labels("ALL").set(0)
 
 # declaration
 channel_closed = True
@@ -643,6 +697,8 @@ watchlist_downloads = json.loads('{}')
 listen4msg_started = False
 group_clientname = ""
 numThreads = 0
+msg_counter_days = []
+metric_countries = ["ALL"]
 
 # read config file values
 if config_filename == "":
@@ -657,14 +713,11 @@ else:
     if "toSubscribe" in myConfig.keys():
         toSubscribe = myConfig["toSubscribe"]
     else:
-        print("error - config file - missing value: toSubscribe, set to False")
         toSubscribe = "False"
     if toSubscribe == "True":
         if "wis2box" in myConfig.keys():
             wis2box = myConfig["wis2box"]
         else:
-            print("error -  config file - missing value: \
-                  wis2box, set to False")
             wis2box = "False"
         if "sub_protocol" in myConfig.keys() and \
            "sub_host" in myConfig.keys() and \
@@ -680,7 +733,6 @@ else:
             print("error - config file - missing value: \
                   sub_protocol, sub_host, sub_port, \
                   sub_user and/or sub_password")
-
         if "sub_logfile" in myConfig.keys():
             sub_logfile = myConfig["sub_logfile"]
         else:
@@ -690,10 +742,7 @@ else:
         if "sub_loglevel" in myConfig.keys():
             sub_loglevel = myConfig["sub_loglevel"]
         else:
-            print("error - config file - missing value: \
-                  sub_loglevel, set to INFO.")
             sub_loglevel = "INFO"
-
         if sub_protocol == "amqps" or sub_protocol == "amqp":
             print("error - use amqp sub script, \
                   this script is only for mqtt(s).")
@@ -748,8 +797,6 @@ else:
                 if "sub_maxMSGsize" in myConfig.keys():
                     sub_maxMSGsize = myConfig["sub_maxMSGsize"]
                 else:
-                    print("error - config file - missing value: \
-                          sub_maxMSGsize, set to 2048")
                     sub_maxMSGsize = 2048
                 sub_clientname = socket.gethostname()
                 if "sub_clientname" in myConfig.keys():
@@ -788,8 +835,8 @@ else:
                     sub_share_name = myConfig["sub_share_name"]
                 else:
                     print("error - config file - missing value: \
-                          sub_share_name, set to ''")
-                    sub_share_name = ""
+                          sub_share_name")
+                    sub_share_name = "mySubGroupName_pleaseChange"
                 if "sub_share_name" != "" and sub_protocol_version == "MQTTv5":
                     for item in sub_topic_config:
                         new_topic = "$share/" + sub_share_name + "/" + item
@@ -876,9 +923,9 @@ else:
             init_metric()
         else:
             monMsgCountryErr = None
-            monCountry = None
-            monToDo = None
-            monToDoDuplicate = None
+            monMsgCountry = None
+            monMsgToDo = None
+            monMsgToDoDuplicate = None
             monMsgCountryDuplicate = None
             monMsgContent = None
 
@@ -901,9 +948,19 @@ logDir_path = Path(logDir)
 if not os.path.exists(logDir):
     logDir_path.mkdir(parents=True)
 init_log(sub_logfile, sub_loglevel, loggerName)
-# schema = json.load(
-#                open(
-#                   "/home/gisc/scripts/withConfig/one4all/message-schema.json"))
+schema = json.load(
+                open("WIS2_Message_Format_Schema.json"))
+
+# write log for config file values
+if toSubscribe == "False":
+    LOG.error(" - config file - missing OR wrong value: toSubscribe is False")
+else:
+    if wis2box == "False":
+        LOG.info(" - config file - wis2box is missing or set to False, to be changed if using inside wis2box")
+    LOG.info(" - config file - sub_loglevel is set to INFO (value in config file OR set as default value)")
+    if sub_maxMSGsize == 2048:
+        LOG.info(" - config file - sub_maxMSGsize for maximum message size is set to 2048 (value in config file OR set as default value)")
+
 
 LOG.info("##### script started #####")
 LOG.info("##########################")
