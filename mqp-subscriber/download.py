@@ -64,14 +64,32 @@ def init_log(logFile, logLevel, loggerName):
     LOG = logging.getLogger(loggerName)
 
 
-def init_counter(date):
-    global msg_counter
-    counter_timeNow = datetime.now()
-    counter_printDay = counter_timeNow.strftime('%Y%m%d')
-    if counter_printDay not in msg_counter.keys():
-        msg_counter.update({counter_printDay: 0})
+def init_counter(thisDay):
+    global msg_counter_days, monToPub, monToDoJson, monNotCore, monErrors, monOpendata, monDownloads, monWithContent, monDuplicate
+    if thisDay not in msg_counter_days.keys():
+        msg_counter_days.update({thisDay:0})
+        if monitor_metrics == "True":
+            for country in metric_countries:
+                monToPub.labels(country).set(0)
+                monToDoJson.labels(country).set(0)
+                monNotCore.labels(country).set(0)
+                monErrors.labels(country).set(0)
+                monOpendata.labels(country).set(0)
+                monDownloads.labels(country).set(0)
+                monWithContent.labels(country).set(0)
+                monDuplicate.labels(country).set(0)
 
 
+def init_metric_label(country):
+    if monitor_metrics == "True":
+        monToPub.labels(country).set(0)
+        monToDoJson.labels(country).set(0)
+        monNotCore.labels(country).set(0)
+        monErrors.labels(country).set(0)
+        monOpendata.labels(country).set(0)
+        monDownloads.labels(country).set(0)
+        monWithContent.labels(country).set(0)
+        monDuplicate.labels(country).set(0)
 
 def sameIntegrity(myInfoFile, myIntegrity):
     global sameContent
@@ -105,8 +123,7 @@ def move_json2error(todoJson):
                   + str(os.path.dirname(errorFile)))
         os.makedirs(os.path.dirname(errorFile))
     if src_exists:
-        shutil.copy(todoJson, errorFile)
-        os.remove(todoJson)
+        shutil.move(todoJson, errorFile)
     else:
         LOG.error(" - missing toDo JSON: " + str(todoJson))
     LOG.error(" - download error occured for json ( "
@@ -114,32 +131,72 @@ def move_json2error(todoJson):
               + str(errorFile))
 
 
-def modifyMSGAndPub(myMSG, file_topic, fullURL):
-    global pub_connected_flag, monitor_metrics, monPub, monErrors
+def modifyAndAddToPub(data_id, downloadFile, file_topic, topic_country, topic_publisher):
+    global pub_connected_flag, monitor_metrics, monErrors, monToPub
+    http = urllib3.PoolManager()
+    if "/" in data_id:
+        filename_data_id = data_id.replace("/", dataId_replace)
+    else:
+        filename_data_id = data_id
+
+    # read org_msg
+    if data_id != "":
+        if msg_store != "":
+            msgStore_path = os.path.dirname(msg_store)
+            if os.path.exists(msgStore_path):
+                msgStore_file = os.path.join(
+                                             msgStore_path,
+                                             filename_data_id)
+                if os.path.exists(msgStore_file):
+                    with open(msgStore_file, 'r') as msgStore_msg:
+                        msgStore_msg = msgStore_msg.read()
+                    myMSG = json.loads(msgStore_msg)
+                    LOG.debug(json.dumps(msgStore_msg, indent=4))
+                else:
+                    msgStore_msg = None
+                    LOG.error(" - missing msg_store message: "
+                              + str(msgStore_file))
+            else:
+                LOG.error(" - missing msg_store directory, value is: "
+                          + str(msgStore_path))
+        else:
+            LOG.error(" - empty value for msg_store in config file")
+    else:
+        LOG.error(" - data_id is empty")
+    # get fullURL
+    if not pub_URLbase.endswith("/"):
+        fullURL = pub_URLbase + "/"
+    else:
+        fullURL = pub_URLbase
+    fullURL = fullURL + topic_publisher
+    downloaded_filename = os.path.basename(downloadFile)
+    fullURL = fullURL + "/" + downloaded_filename
+    LOG.debug(" - fullURL whether transmitted: "
+             + str(fullURL))
     # modify org_msg links to opendata links
     new_msg_id = str(uuid.uuid1())
     myMSG["id"] = new_msg_id
     cache_pub_now = time.time()
     cache_pub_nsec = ('%.9g' % (cache_pub_now % 1))[1:]
     cache_pub_datestamp = time.strftime(
-                         "%Y%m%dT%H%M%S",
+            "%Y-%m-%dT%H:%M:%S",
                          time.gmtime(cache_pub_now)) + cache_pub_nsec
     gcTime = cache_pub_datestamp + "Z"
     if "pubtime" in myMSG["properties"].keys():
         myMSG["properties"]["pubtime"] = gcTime
     else:
         if "pub_datetime" in myMSG["properties"].keys():
-            myMSG["properties"]["pub_datetime"] = gcTime
-            LOG.warning(" - pub_datetime in original msg,\
-             should be pubtime")
+            LOG.warning(" - pub_datetime should be pubtime, updated it")
+            del myMSG["properties"]["pub_datetime"]
+            myMSG["properties"]["pubtime"] = gcTime
         if ("publication_datetime" in myMSG["properties"].keys()):
-            myMSG["properties"]["publication_datetime"] = gcTime
-            LOG.warning(" - publication_datetime in original msg,\
-             should be pubtime")
+            LOG.warning(" - publication_datetime should be pubtime, updated it")
+            del myMSG["properties"]["publication_datetime"]
+            myMSG["properties"]["pubtime"] = gcTime
         if "pubTime" in myMSG["properties"].keys():
-            myMSG["properties"]["pubTime"] = gcTime
-            LOG.warning(" - pubTime in original msg,\
-             should be pubtime")
+            LOG.warning(" - pubTime should be pubtime, updated it")
+            del myMSG["properties"]["pubTime"]
+            myMSG["properties"]["pubtime"] = gcTime
 
     msgStore_url = ""
     if "links" in myMSG["properties"].keys():
@@ -157,16 +214,17 @@ def modifyMSGAndPub(myMSG, file_topic, fullURL):
             if item["rel"] == "canonical":
                 msgStore_url = item["href"]
         if msgStore_url == "":
-            LOG.info(" - no canonical href in links,\
-                use first href value instead")
+            LOG.info(" - no canonical href in links,"
+                    + " use first href value instead")
             msgStore_url = urlList[0]["href"]
         if msgStore_url == "":
             LOG.error(" - no links in message: "
                   + str(json.dumps(myMSG, indent=4)))
     else:
+        LOG.error(" - modifyMSG - urlList is None")
         if monitor_metrics == "True":
-            monErrors.inc()
-    # only publish own link for cached messages
+            monErrors.labels("ALL").inc()
+            monErrors.labels(topic_country).inc()
     myMSG["links"][0]["href"] = fullURL
     # other value for cache links?
     myMSG["links"][0]["rel"] = "canonical"
@@ -185,30 +243,32 @@ def modifyMSGAndPub(myMSG, file_topic, fullURL):
     LOG.debug(" - updated msg is:"
                              + json.dumps(myMSG, indent=4)) 
     LOG.debug(" - new topic value is: " + str(file_topic))
-    LOG.info(" - message modified for re-pub")
-    # pub
-    if pub_connected_flag is False:
-        LOG.error(" - pub_client not connected, \
-         try to re-connect")
-        getPubConnection()
-    if pub_connected_flag is False:
-        LOG.error(" - pub_client not connected, \
-                          NO Publish possible")
-        if monitor_metrics == "True":
-            monErrors.inc()
+    # write to msg_modified_store
+    LOG.info(" - write modified message to msg_modified_store (data_id is: " + str(data_id))
+    msg_filename = filename_data_id + ".json"
+    modified_msg_file = os.path.join(msg_modified_store, msg_filename)
+    with open(modified_msg_file, 'w') as msgStoreMod_msg:
+        msgStoreMod_msg.write(json.dumps(myMSG, indent=4))
+    if monitor_metrics == "True":
+        monToPub.labels(topic_country).inc()
+        monToPub.labels("ALL").inc()
+    # write ToPub file
+    if "." in filename_data_id:
+        filename_data_id = filename_data_id.replace(".","_")
+    if ":" in filename_data_id:
+        filename_data_id = filename_data_id.replace(":","_")
+    toPubFilename_inWork = ".toPublish_" +  filename_data_id + ".json"
+    toPubFile = os.path.join(toPubDir, toPubFilename_inWork)
+    toPub_filecontent = '{"data_id":"' + str(data_id) + '", "fullURL":"' + str(fullURL) + '", "topic":"' + str(file_topic) + '"}'
+    LOG.debug(" - toPub_filecontent is: " + str(toPub_filecontent))
+    if not os.path.exists(toPubFile):
+        with open(toPubFile, "w") as myToPubFile:
+            myToPubFile.write(toPub_filecontent)
+        toPubFilename_ready = toPubFilename_inWork.replace(".toPublish","toPublish")
+        toPubFile_ready = os.path.join(toPubDir, toPubFilename_ready)
+        shutil.move(toPubFile, toPubFile_ready)
     else:
-        info = pub_client.publish(
-                           file_topic,
-                           json.dumps(myMSG, indent=4),
-                           qos=1,
-                           properties=None)
-        if info[0] != 0:
-            LOG.error(" - PUBLISH FAILED, return code was: " + str(info))
-            if monitor_metrics == "True":
-                monErrors.inc()
-        if monitor_metrics == "True":
-            if "swe/smhi" in file_topic:
-                monPub.labels("SWEDEN").inc()
+        LOG.error(" toPubFile already there: " + str(toPubFile))
 
 
 def checkBeforeDownload(download_formats, downloadFile):
@@ -228,18 +288,20 @@ def checkBeforeDownload(download_formats, downloadFile):
     return format_match
 
 
-def download(url, downloadFile, new_sum,
+def download(url, downloadFile, integrity,
              integrity_method, data_id,
-             todoJson, pub_client):
-    global errorDir
-    global numThreads
-    global monThreads
+             todoJson, pub_client, topic_country):
+    global errorDir, numThreads, monThreads, monDownloads, monOpendata, monErrors
     numThreads = numThreads + 1
     if monitor_metrics == "True":
         monThreads.inc()
     file_topic = topic
     myHeaders = ""
     topic_publisher = ""
+    if "/" in data_id:
+        filename_data_id = data_id.replace("/", dataId_replace)
+    else:
+        filename_data_id = data_id
     if download_restricted == "True":
         LOG.info(" - download from restricted source url: " + str(url))
         if download_username == "" or download_password == "":
@@ -273,14 +335,10 @@ def download(url, downloadFile, new_sum,
     else:
         LOG.error(" - missing downloadFile value in json file")
         move_json2error(todoJson)
+        LOG.info(" - moved to error toDownload JSON file: " + str(todoJson))
         targetDir = ""
     if targetDir != "" and not os.path.exists(targetDir):
         os.makedirs(targetDir)
-
-    if "/" in data_id:
-        filename_data_id = data_id.replace("/", dataId_replace)
-    else:
-        filename_data_id = data_id
     infoFile = os.path.join(local_memory, filename_data_id)
     LOG.debug("infoFile is: " + str(infoFile))
 
@@ -289,8 +347,6 @@ def download(url, downloadFile, new_sum,
         if download_formats != []:
             start_download = checkBeforeDownload(download_formats, downloadFile)
         else:
-            LOG.info(" - no download format in config file, \
-                                 download all")
             start_download = True
 
         tmp_filename = os.path.basename(downloadFile)
@@ -303,85 +359,54 @@ def download(url, downloadFile, new_sum,
                 LOG.debug(" - create tmp_targetDir: " + tmp_targetDir)
                 os.makedirs(tmp_targetDir)
             with open(tmp_file, 'wb') as out_tmp_file:
-                if myHeaders != "":
+                retry = 1
+                reqStatus = 999
+                for retry in range(3):
                     try:
-                        LOG.debug(" - myHeaders: " + str(myHeaders))
-                        response = http.request(
+                        if myHeaders != "":
+                            LOG.debug(" - myHeaders: " + str(myHeaders))
+                            response = http.request(
                                   'GET',
                                   url,
                                   headers=myHeaders,
                                   preload_content=False)
-                        reqStatus = response.status
-                        if reqStatus != 200:
-                            LOG.error(" - http response status (with headers): "
-                                      + str(reqStatus) + " for: " + str(url))
-                            response = "http_error"
-                    except urllib3.exceptions.HTTPError as err:
-                        LOG.error(" - http request error for: "
-                                  + downloadFile)
-                        LOG.error(err)
-                        response = "http_error"
-                else:
-                    # special case download own data (e.g. DWD for internal URL)
-                    if "dwd.de" in url:
-                        try:
-                            response = http.request(
-                                       'GET',
-                                       url,
-                                       preload_content=False)
-                            reqStatus = response.status
-                            if reqStatus != 200:
-                                LOG.error(" - http response status (dwd-url) was: "
-                                          + str(reqStatus) + " for: " + str(url))
-                                response = "http_error"
-                        except urllib3.exceptions.HTTPError:
-                            LOG.error(" - http request error for: " + downloadFile)
-                            response = "http_error"
-                    else:
-                        if download_proxy != "":
-                            try:
+                        else:
+                            if download_proxy != "":
+                                LOG.debug(" - proxy for http request is: " + str(download_proxy))
                                 response = http_proxy.request(
                                              'GET',
                                              url,
                                              preload_content=False)
-                                reqStatus = response.status
-                                if reqStatus != 200:
-                                    LOG.error(" - http response status \
-                                              (no headers, with proxy): "
-                                              + str(reqStatus)
-                                              + " for: " + str(url))
-                                    response = "http_error"
-                            except urllib3.exceptions.HTTPError:
-                                LOG.error(" - http request error for: "
-                                          + downloadFile
-                                          + " from URL: " + str(url))
-                                response = "http_error"
-                        else:
-                            try:
+                            else:
                                 response = http.request(
                                             'GET',
                                             url,
                                             preload_content=False)
-                                reqStatus = response.status
-                                if reqStatus != 200:
-                                    LOG.error(" - http response status \
-                                          (no headers, no proxy): "
-                                          + str(reqStatus)
-                                          + " for: " + str(url))
-                                    response = "http_error"
-                            except urllib3.exceptions.HTTPError:
-                                LOG.error(" - http request error for: "
-                                          + downloadFile
-                                          + " from URL: " + str(url))
-                                response = "http_error"
+                        reqStatus = response.status
+                        if reqStatus != 200:
+                            if retry == 2:
+                                time.sleep(4)
+                            retry = retry + 1
+                        else:
+                            retry = 4
+                    except urllib3.exceptions.HTTPError as err:
+                            LOG.error(" - http request error for: "
+                                    + downloadFile)
+                            LOG.error(err)
+                            response = "http_error"
+                if reqStatus != 200:
+                    LOG.error(" - http response status: "
+                              + str(reqStatus) + " for: " + str(url))
+                    response = "http_error"
                 if str(response) != "http_error":
                     shutil.copyfileobj(response, out_tmp_file)
                     LOG.debug(" - http request ready for: " + str(downloadFile))
                 else:
-                    move_json2error(todoJson)
-                    LOG.error(" - download_error occured, URL was: " + str(url))
+                    out_tmp_file.truncate(0)
+                    LOG.error(" - download_error occured for " + str(downloadFile) + ", URL was: " + str(url) + " and response status was: " +  str(reqStatus))
                     if monitor_metrics == "True":
-                        monErrors.inc()
+                        monErrors.labels(topic_country).inc()
+                        monErrors.labels("ALL").inc()
             if os.path.isfile(tmp_file):
                 if os.path.getsize(tmp_file) > 0:
                     # rename only if not AFD 
@@ -390,11 +415,14 @@ def download(url, downloadFile, new_sum,
                         LOG.debug(" - filesize > 0, copied tmp file to: "
                                   + str(downloadFile))
                         LOG.info(" - DOWNLOAD READY: " + str(downloadFile))
-                    # AFD
-                    if download_afdDir != "":
+                        if monitor_metrics == "True":
+                            monDownloads.labels(topic_country).inc()
+                            monDownloads.labels("ALL").inc()
+                    else:
+                        # AFD
                         # get prefix for filename,
                         # also used for subdirecories on opendata
-                        LOG.info(" - topic is: " + str(file_topic))
+                        LOG.debug(" - topic is: " + str(file_topic))
                         if "wis2/" in file_topic:
                             topic_publisher = file_topic.split("wis2/")[1]
                             if "/data" in topic_publisher:
@@ -425,126 +453,52 @@ def download(url, downloadFile, new_sum,
                                  + str(afd_out_file))
                         shutil.move(tmp_file, downloadFile)
                         LOG.info(" - DOWNLOAD READY: " + str(downloadFile))
+                        if monitor_metrics == "True":
+                            monDownloads.labels(topic_country).inc()
+                            monDownloads.labels("ALL").inc()
+
                 else:
                     LOG.error(" - download error: tmp filesize is 0")
                     move_json2error(todoJson)
+                    LOG.info(" - moved to error toDownload JSON file: " + str(todoJson))
                     os.remove(tmp_file)
                     if monitor_metrics == "True":
-                        monErrors.inc()
+                        monErrors.labels(topic_country).inc()
+                        monErrors.labels("ALL").inc()
         else:
+            # checkBeforeDownload result NO download, format error
+            move_json2error(todoJson)
             if monitor_metrics == "True":
-                monErrors.inc()
+                monErrors.labels(topic_country).inc()
+                monErrors.labels("ALL").inc()
     if os.path.exists(downloadFile):
         # write local memory file and remove toDo-json
         if not os.path.exists(infoFile):
-            touch_memFile(local_memory, data_id)
+            Path(infoFile).touch()
+            LOG.info(" add file to local_memory: " +str(infoFile))
         else:
-            LOG.debug(" - infoFile is (before integrity_file method): "
+            LOG.debug(" - infoFile is: "
                       + str(infoFile))
-        if integrity_method != "":
-            integrity_file(downloadFile, infoFile, integrity_method)
-        LOG.debug(" - download without errors, remove json")
+        LOG.info(" calculate integrity for: " + str(downloadFile))
+        integrity_file(downloadFile, infoFile, integrity_method)
         src_exists = os.path.exists(todoJson)
         if src_exists:
             os.remove(todoJson)
+            LOG.info(" - removed toDownload (download ready): " + str(todoJson))
         else:
             LOG.info(" - todoJson (" + str(todoJson) + ") already removed")
 
-        # pub message for global cache
+        # add toPub and modify message for global cache
         if toPublish == "True":
-            # read org msg from msg_store
-            if data_id != "":
-                if msg_store != "":
-                    msgStore_path = os.path.dirname(msg_store)
-                    if os.path.exists(msgStore_path):
-                        msgStore_filename = data_id.replace(
-                                               "/",
-                                               dataId_replace)
-                        msgStore_file = os.path.join(
-                                             msgStore_path,
-                                             msgStore_filename)
-                        if os.path.exists(msgStore_file):
-                            with open(msgStore_file, 'r') as msgStore_msg:
-                                myMSG = msgStore_msg.read()
-                            msgStore_msg = json.loads(myMSG)
-                            LOG.debug(json.dumps(msgStore_msg, indent=4))
-                        else:
-                            msgStore_msg = None
-                            LOG.error(" - missing msg_store message: "
-                                      + str(msgStore_file))
-                    else:
-                        LOG.error(" - missing msg_store directory, value is: "
-                                  + str(msgStore_path))
-                else:
-                    LOG.error(" - empty value for msg_store in config file")
-            else:
-                LOG.error(" - data_id is empty")
-            # check if downloaded file is arrived on opendata
-            if not pub_URLbase.endswith("/"):
-                fullURL = pub_URLbase + "/"
-            else:
-                fullURL = pub_URLbase
-            fullURL = fullURL + topic_publisher
-            downloaded_filename = os.path.basename(downloadFile)
-            fullURL = fullURL + "/" + downloaded_filename
-            LOG.info(" - fullURL whether transmitted: "
-                     + str(fullURL))
-            # test
-            # file_topic = "cache_test/" + file_topic
-            # request to check if file on opendata
-            opendata_respStatus = 999
-            # let afd work
-            time.sleep(2)
-            opendata_request = http.request(
-                                       'GET',
-                                       fullURL,
-                                       preload_content=False)
-            opendata_respStatus = opendata_request.status
-            if opendata_respStatus != 200:
-                # not on opendata, wait and try again 
-                i = 1
-                for i in range(2):
-                    time.sleep(2)
-                    opendata_request = http.request(
-                                           'GET',
-                                           fullURL,
-                                           preload_content=False)
-                    opendata_respStatus = opendata_request.status
-                    if opendata_respStatus != 200:
-                        i = i + 1
-                    else:
-                        i = 5
-            if opendata_respStatus == 200:
-                LOG.info(" - TRANSMITTED to opendata: " + str(fullURL))
-                # pub message for cache
-                if msgStore_msg is not None:
-                    modifyMSGAndPub(msgStore_msg, file_topic, fullURL)
-                else:
-                    LOG.error(" - PUBLISH for cache message failed, \
-                              missing msg_store message")
-            else:
-                LOG.error(" - file NOT transmitted to opendata, NO PUBLISH\
-                        (response code: " + str(opendata_respStatus) + ")")
+            modifyAndAddToPub(data_id, downloadFile, file_topic, topic_country, topic_publisher)
+            if monitor_metrics == "True":
+                monOpendata.labels(topic_country).inc()
+                monOpendata.labels("ALL").inc()
     # thread ready
-    LOG.info(" - download end")
     if numThreads > 0:
         numThreads = numThreads - 1
         if monitor_metrics == "True":
             monThreads.dec(1)
-
-
-def touch_memFile(local_memory, data_id):
-    # touch memory_file with data_id as filename
-    if "/" in data_id:
-        filename_data_id = data_id.replace("/", dataId_replace)
-    else:
-        filename_data_id = data_id
-    memory_file = os.path.join(local_memory, filename_data_id)
-    memory_targetDir = os.path.join(local_memory)
-    if not os.path.exists(memory_targetDir):
-        LOG.info(" - created local memory directory: " + str(local_memory))
-        os.makedirs(memory_targetDir, exist_ok=True)
-    Path(memory_file).touch()
 
 
 def calc_integrity(filename, integrity_method):
@@ -590,14 +544,17 @@ def calc_integrity(filename, integrity_method):
 
 def integrity_file(filename, infoFile, integrity_method):
     file_integrity = calc_integrity(filename, integrity_method)
-    with open(infoFile, 'w') as attrFile:
-        attrFile.write(file_integrity)
-        LOG.debug(" - integrity value written to info file: " + str(infoFile))
+    try:
+        with open(infoFile, 'w') as attrFile:
+            attrFile.write(file_integrity)
+            LOG.debug(" - integrity value written to info file: " + str(infoFile))
+    except Exception as err:
+        LOG.error(" - while writing integrtiy to infoFile: " + str(infoFile) + ", error was: " + str(err))
 
 
 def createNewDownloadThread(url, downloadFileLocation,
                             integrity, integrity_method,
-                            data_id, todoJson, pub_client):
+                            data_id, todoJson, pub_client, topic_country):
     global infoFile
     if (url == "" or downloadFileLocation == "" or data_id == ""):
         LOG.error(" - createNewDownloadThread: missing url, \
@@ -617,72 +574,9 @@ def createNewDownloadThread(url, downloadFileLocation,
                                     integrity_method,
                                     data_id,
                                     todoJson,
-                                    pub_client))
+                                    pub_client,
+                                    topic_country))
         download_thread.start()
-
-
-# re-publish
-def on_pubconnect(myPub_client, userdata, flags, rc, properties=None):
-    global pub_connected_flag
-    LOG.info(" - pub_connection code is: " + str(rc))
-    if rc == 0:
-        LOG.debug(" - connected to mqtts broker for publish for global cache")
-        pub_connected_flag = True
-    else:
-        LOG.error(" - connection to mqtt broker for global cache pub failed \
-                  with result code: " + str(rc))
-
-
-def on_pubdisconnect(pub_client, userdata, rc, properties=None):
-    global pub_connected_flag
-    LOG.info(" - pub_client disconnected")
-    pub_connected_flag = False
-
-
-def getPubConnection():
-    global pub_client
-    global pub_connected_flag
-    client_suffix = uuid.uuid1()
-    clientname = socket.gethostname() + "_4pub_" + str(client_suffix)
-    LOG.info("pub_clientname is: " + str(clientname))
-    if pub_protocol_version == "MQTTv5":
-        pub_client = mqtt.Client(
-                         clientname,
-                         protocol=mqtt.MQTTv5)
-    else:
-        pub_client = mqtt.Client(
-                         clientname,
-                         clean_session=True,
-                         protocol=mqtt.MQTTv311)
-    pub_connected_flag = False
-    pub_client.username_pw_set(
-                        pub_user,
-                        password=pub_password)
-    pub_client.tls_set(
-                 tls_version=ssl.PROTOCOL_TLSv1_2)
-    pub_client.on_connect = on_pubconnect
-    pub_client.on_disconnect = on_pubdisconnect
-    pub_client.on_publish = on_publish
-    if pub_protocol_version == "MQTTv5":
-        pubConn_properties = Properties(PacketTypes.CONNECT)
-        pubConn_properties.MaximumPacketSize = sub_maxMSGsize
-    else:
-        pubConn_properties = None
-    LOG.debug("CONNECT properties for pub are: "
-              + str(pubConn_properties))
-    pub_client.connect(
-                  pub_host,
-                  port=int(pub_port),
-                  properties=pubConn_properties)
-    pub_client.loop_start()
-
-
-def on_publish(client, userdata, mid):
-    global monPub
-    LOG.info(" - on_publish, message id {}".format(mid))
-    LOG.info(" - published successfully to mqtt broker")
-    if monitor_metrics == "True":
-        monPub.labels("ALL").inc()
 
 
 def connect_prometheus(prometheus_port):
@@ -693,28 +587,35 @@ def connect_prometheus(prometheus_port):
 
 
 def init_metric():
-    global monToDoJson, monPub, monThreads, monErrors
+    global monToDoJson, monThreads, monErrors, monDownloads, monToPub, monOpendata, monNotCore, monDuplicate, monWithContent
     connect_prometheus(PROMETHEUS_PORT)
     REGISTRY.unregister(PROCESS_COLLECTOR)
     REGISTRY.unregister(PLATFORM_COLLECTOR)
     REGISTRY.unregister(REGISTRY._names_to_collectors['python_gc_objects_collected_total'])
 
-    monToDoJson = Gauge('msg_download_toDoJson', 'Amount of toDo json files')
-    monToDoJson.set(0)
-
-    monErrors = Gauge('msg_download_errors', 'Amount of errors for download for toDo json files')
-    monErrors.set(0)
-
-    monPub = Gauge('msg_pub4GC', 'Amount of messages published for GC for country', ["Country"])
-    monPub.labels("SWEDEN").set(0)
-    monPub.labels("ALL").set(0)
-
+    monToDoJson = Gauge('msg_download_toDoJson', 'Amount of toDo json files for countryy', ["Country"])
+    monToDoJson.labels("ALL").set(0)
+    monErrors = Gauge('msg_download_errors', 'Amount of errors for download for Country', ["Country"])
+    monErrors.labels("ALL").set(0)
+    monNotCore = Gauge('msg_not_core', 'Amount of messages not core for countryy', ["Country"])
+    monNotCore.labels("ALL").set(0)
+    monToPub = Gauge('msg_download_toPub4GC', 'Amount of messages to publish for GC for country', ["Country"])
+    monToPub.labels("ALL").set(0)
+    monDownloads = Gauge('msg_downloaded', 'Amount of downloads for country', ["Country"])
+    monDownloads.labels("ALL").set(0)
+    monOpendata = Gauge('msg_download_toOpendata', 'Amount of moved files to opendata for country', ["Country"])
+    monOpendata.labels("ALL").set(0)
+    monDuplicate = Gauge('msg_download_duplicate', 'Amount of messages already downloaded for country', ['Country'])
+    monDuplicate.labels("ALL").set(0)
+    monWithContent = Gauge('msg_download_content', 'Amount of messages with content for country', ['Country'])
+    monWithContent.labels("ALL").set(0)
     monThreads =  Gauge('msg_download_threads', 'Amount of Threads for downloading')
     monThreads.set(0)
 
 
 # declaration
-msg_counter = {}
+msg_counter_days = {}
+metric_countries = ["ALL"]
 integrity_method = ""
 withDownload = "False"
 download_targetDir = ""
@@ -839,32 +740,6 @@ else:
                   toPublish, set to False")
             toPublish = "False"
         if toPublish == "True":
-            if "pub_host" in myConfig.keys() and \
-               "pub_port" in myConfig.keys() and \
-               "pub_user" in myConfig.keys() and \
-               "pub_password" in myConfig.keys():
-                pub_host = myConfig["pub_host"]
-                pub_port = myConfig["pub_port"]
-                pub_user = myConfig["pub_user"]
-                pub_password = myConfig["pub_password"]
-            else:
-                print("error - config file - missing value: \
-                      pub_host, pub_port, pub_user and/or pub_password")
-            pub_protocol = "mqtts"
-            if "pub_protocol" in myConfig.keys():
-                pub_protocol = myConfig["pub_protocol"]
-            if pub_protocol != "mqtts":
-                print("error - config file: pub_protocol not mqtts")
-            else:
-                pub_message_broker = "mqtts://" + pub_user \
-                                     + ":[passwd]@" + pub_host \
-                                     + ":" + str(pub_port)
-                if "pub_protocol_version" in myConfig.keys():
-                    pub_protocol_version = myConfig["pub_protocol_version"]
-                else:
-                    print("error - config file - missing value: \
-                          pub_protocol_version, set to MQTTv5")
-                    pub_protocol_version = "MQTTv5"
             if "msg_store" in myConfig.keys():
                 msg_store = myConfig["msg_store"]
             else:
@@ -896,65 +771,85 @@ else:
             monitor_metrics = "False"
         # monitoring
         if monitor_metrics == "True":
-            if "PROMETHEUS_DOWNLOAD_PORT" in myConfig.keys():
-                PROMETHEUS_PORT = myConfig["PROMETHEUS_DOWNLOAD_PORT"]
+            if "PROMETHEUS_PORT" in myConfig.keys():
+                PROMETHEUS_PORT = myConfig["PROMETHEUS_PORT"]
+                PROMETHEUS_PORT = int(PROMETHEUS_PORT) + 1
             else:
                 print("error -  config file - missing value: \
-                      PROMETHEUS_DOWNLOAD_PORT, set to 12001")
+                      PROMETHEUS_PORT, set to 12001")
                 PROMETHEUS_PORT=12001
             init_metric()
         else:
             monToDoJson = None
-            monPub = None
             monThreads = None
             monErrors = None
+            monDownloads = None
+            monToPub = None
+            monOpendata = None
+            monNotCore = None
+            monDuplicate = None
 
 
 # programm
 init_log(download_logfile, download_loglevel, loggerName)
 LOG.info(" ----- STARTED download.py -----")
-if toPublish == "True":
-    LOG.info("pub message broker is: " + str(pub_message_broker))
 if download_flat == "True":
     LOG.info(" - flat download")
 if download_toDoDir.endswith("/"):
     local_memory = download_toDoDir + "done/"
+    toPubDir = download_toDoDir + "toPub/"
 else:
     local_memory = download_toDoDir + "/done/"
+    toPubDir = download_toDoDir + "/toPub/"
+if toPublish == "True":
+    if msg_store.endswith("/"):
+        msg_modified_store = msg_store + "modified/"
+    else:
+        msg_modified_store = msg_store + "/modified/"
+    if not os.path.exists(local_memory):
+        os.makedirs(local_memory, exist_ok=True)
+    if not os.path.exists(toPubDir):
+        os.makedirs(toPubDir, exist_ok=True)
+    if not os.path.exists(msg_modified_store):
+        os.makedirs(msg_modified_store, exist_ok=True)
+
 pub_client = None
 pub_connected_flag = False
-numThreads = 0
-
-if toPublish == "True":
-    getPubConnection()
 
 if os.path.isdir(inputDir):
+    numThreads = 0
     while True:
+        readInput_timeNow = datetime.now()
+        readInput_printDay = readInput_timeNow.strftime('%Y%m%d')
+        readInput_printNow = readInput_timeNow.strftime('%Y%m%d%H%M%S%f')
+        # add new day as item to msg_counter_days and reset metric counters
+        init_counter(readInput_printDay)
         # list of toDoFiles from input dir
         inputFiles = [f for f in os.listdir(
                                    inputDir) if os.path.isfile(
                                                   os.path.join(inputDir, f)) and not f.startswith('.')]
-        LOG.info(" - inputFiles len is: " + str(len(inputFiles)))
-        init_counter(msg_counter)
-        readInput_timeNow = datetime.now()
-        readInput_printDay = readInput_timeNow.strftime('%Y%m%d')
-        if readInput_printDay in msg_counter.keys():
-            msg_counter[readInput_printDay] = msg_counter[readInput_printDay] + len(inputFiles)
-            LOG.info(" - msg_counter for day: " + readInput_printDay + " updated to: " + str(msg_counter[readInput_printDay]))
+        LOG.debug(" - inputFiles len is: " + str(len(inputFiles)))
+        if len(inputFiles) == 0:
+            LOG.info(" - WAITING for input files")
+            time.sleep(2)
         else:
-            LOG.error(" - MISSING day entry (" + readInput_printDay + " in msg_counter (keys are: " + str(msg_counter.keys()) + ")")
-        if monitor_metrics == "True":
-            monToDoJson.set(msg_counter[readInput_printDay])
-        while len(inputFiles) > 0:
+            LOG.info(" - input files count is: " + str(len(inputFiles)))
+            # update value for monToDoJson
+            if monitor_metrics == "True":
+                msg_counter_days[readInput_printDay] = msg_counter_days[readInput_printDay] + len(inputFiles)
+                monToDoJson.labels("ALL").set(msg_counter_days[readInput_printDay])
             LOG.info("New Downloads arrived: " + str(len(inputFiles)) + " files, number of active threads: " + str(numThreads))
-            if numThreads < 100:
-                for item in inputFiles:
+        while len(inputFiles) > 0:
+            LOG.debug(" number of active threads: " + str(numThreads))
+            for item in inputFiles:
+                if numThreads < 100:
                     try:
                         if ".nfs" not in item:
                             src_todo = os.path.join(inputDir, item)
                             Json_inWork_name = "." + item
                             Json_inWork = os.path.join(inputDir, Json_inWork_name)
                             shutil.move(src_todo, Json_inWork)
+                            LOG.info(" - next toDownload is: " + str(src_todo))
                             timeNow = datetime.now()
                             printTimeNow = timeNow.strftime('%Y%m%dT%H%M%S')
                             # set to default
@@ -970,10 +865,12 @@ if os.path.isdir(inputDir):
                             data_id = ""
                             LOG.debug(" - next download is: " + item)
                             topic = ""
+                            topic_country = ""
                             # read toDo json file
                             myFile = open(Json_inWork, "r")
                             filecontent = myFile.read()
                             myFile.close()
+                            errorDir = inputDir + "/errors/"
                             try:
                                 json_file = json.loads(filecontent)
                                 if "content_value" in json_file.keys():
@@ -1002,28 +899,40 @@ if os.path.isdir(inputDir):
                                     else:
                                         LOG.info(" - missing value in JSON: \
                                          integrity_method, set to ''")
+                                    if integrity_method == "":
+                                        LOG.error(" missing integrity_method in Json toDownload " + str(Json_inWork) + ", set to sha512")
+                                        integrity_method = "sha512"
                                     if "topic" in json_file.keys():
                                         topic = json_file["topic"]
+                                        # monitoring metrics
+                                        if "/" in topic:
+                                            topic_country = topic.split("/")[4]
+                                            LOG.debug(" - topic_country is: " + str(topic_country))
+                                        else:
+                                            LOG.error(" - MISSING '/' in topic, in json file: "
+                                                      + str(json.dumps(msg_content, indent=4)))
+                                        if topic_country not in metric_countries:
+                                            metric_countries.append(topic_country)
+                                            init_metric_label(topic_country)
+                                        if monitor_metrics == "True":
+                                            monToDoJson.labels(topic_country).inc()
+                                            monToDoJson.labels("ALL").inc()
                                     else:
                                         LOG.info(" - missing value in JSON: \
                                          topic, set to ''")
-                                    if "instance_identifier" in json_file.keys():
-                                        data_id = json_file["instance_identifier"]
+                                    
+                                    if "data_id" in json_file.keys():
+                                        data_id = json_file["data_id"]
                                     else:
-                                        if "data_id" in json_file.keys():
-                                            data_id = json_file["data_id"]
-                                        else:
-                                            LOG.info(" - missing value in JSON: \
+                                        LOG.error(" - missing value in JSON: \
                                              data_id, set to ''")
                                     if "/" in data_id:
                                         dataId_dir = os.path.dirname(data_id)
-                                    else:
-                                        dataId_dir = ""
-                                    if "/" in data_id:
                                         filename_data_id = data_id.replace(
                                                     "/",
                                                     dataId_replace)
                                     else:
+                                        dataId_dir = ""
                                         filename_data_id = data_id
                                     infoFile = local_memory + filename_data_id
 
@@ -1033,27 +942,25 @@ if os.path.isdir(inputDir):
                                           or sourceUrl, json is: "
                                           + str(filecontent))
                                         if monitor_metrics == "True":
-                                            monErrors.inc()
+                                            monErrors.labels("ALL").inc()
+                                            monErrors.labels(topic_country).inc()
                                     if download_flat == "True":
                                         targetDir = ""
                                     else:
                                         targetDir = os.path.dirname(downloadFile)
                             except Exception as e:
                                 LOG.error(" - while reading json toDo, error was: " + str(e))
-                                errorDir = inputDir + "/errors/"
                                 errorFile = os.path.join(errorDir, item)
                                 shutil.move(Json_inWork, errorFile)
                                 if monitor_metrics == "True":
-                                    monErrors.inc()
-                            if targetDir == "":
-                                errorDir = inputDir + "/errors/"
-                            else:
-                                errorDir = download_targetDir + "/errors/"
-                            errorDir = errorDir.replace("//", "/")
+                                    monErrors.labels("ALL").inc()
+                                    monErrors.labels(topic_country).inc()
                             if targetDir != "":
+                                errorDir = download_targetDir + "/errors/"
                                 if not os.path.exists(targetDir):
                                     LOG.info(" - create targetDir: " + targetDir)
                                     os.makedirs(targetDir)
+                            errorDir = errorDir.replace("//", "/")
                             if not os.path.exists(errorDir):
                                 LOG.info(" - create errorDir: " + errorDir)
                                 os.makedirs(errorDir)
@@ -1068,8 +975,10 @@ if os.path.isdir(inputDir):
                                         content2file.write(msg_content)
                                 LOG.warning(" - MSG WITH CONTENT: " + str(msgContentFile))
                                 if monitor_metrics == "True":
-                                    monErrors.inc()
+                                    monWithContent.labels("ALL").inc()
+                                    monWithContent.labels(topic_country).inc()
                                 os.remove(Json_inWork)
+                                LOG.info(" - removed toDownload: " + str(Json_inWork))
                             else:
                                 # file already exists?
                                 if download_flat == "True":
@@ -1089,7 +998,8 @@ if os.path.isdir(inputDir):
                                                  no download for: "
                                                  + downloadFile)
                                                 if monitor_metrics == "True":
-                                                    monErrors.inc()
+                                                    monDuplicate.labels("ALL").inc()
+                                                    monDuplicate.labels(topic_country).inc()
                                             else:
                                                 LOG.error("NOT SAME integrity value, \
                                                   calc_integrity for: "
@@ -1101,7 +1011,8 @@ if os.path.isdir(inputDir):
                                                     LOG.info("SAME integrity value, \
                                                      NO download")
                                                     if monitor_metrics == "True":
-                                                        monErrors.inc()
+                                                        monDuplicate.labels("ALL").inc()
+                                                        monDuplicate.labels(topic_country).inc()
                                                 else:
                                                     LOG.info(" - integrity value NOT equal, \
                                                      download again...")
@@ -1113,19 +1024,21 @@ if os.path.isdir(inputDir):
                                                              integrity_method,
                                                              data_id,
                                                              Json_inWork,
-                                                             pub_client)
+                                                             pub_client,
+                                                             topic_country)
                                                     except BaseException as err:
                                                         LOG.error("NOT reached: "
                                                           + sourceUrl)
                                                         LOG.error(err)
                                                         move_json2error(Json_inWork)
+                                                        LOG.info(" - moved to error: " + str(Json_inWork))
                                                         if monitor_metrics == "True":
-                                                            monErrors.inc()
+                                                            monErrors.labels("ALL").inc()
+                                                            monErrors.labels(topic_country).inc()
                                         else:
                                             LOG.error("MISSING: data_id in memory, \
                                               already downloaded")
-                                            touch_memFile(local_memory,
-                                                  data_id)
+                                            Path(infoFile).touch()
                                             # calculate and write integrity
                                             integrity_file(downloadFile,
                                                    infoFile,
@@ -1134,9 +1047,13 @@ if os.path.isdir(inputDir):
                                         alreadyThere = os.path.exists(infoFile)
                                         if alreadyThere is True:
                                             os.remove(Json_inWork)
-                                            LOG.info("MISSING: integrity value, \
+                                            LOG.info(" - removed toDownload (already there): " + str(Json_inWork))
+                                            LOG.info("MISSING: integrity value in msg, \
                                              already downloaded: "
                                              + downloadFile)
+                                            if monitor_metrics == "True":
+                                                monDuplicate.labels("ALL").inc()
+                                                monDuplicate.labels(topic_country).inc()
                                 else:
                                     if download_onlyCore:
                                         if "/recommended/" not in topic:
@@ -1148,19 +1065,23 @@ if os.path.isdir(inputDir):
                                                           integrity_method,
                                                           data_id,
                                                           Json_inWork,
-                                                          pub_client)
+                                                          pub_client,
+                                                          topic_country)
                                             except BaseException as err:
                                                 LOG.error(" - createNewDownloadThread: "
                                                         + sourceUrl + " error was: " + str(err))
                                                 move_json2error(Json_inWork)
                                                 if monitor_metrics == "True":
-                                                    monErrors.inc()
+                                                    monErrors.labels("ALL").inc()
+                                                    monErrors.labels(topic_country).inc()
                                         else:
                                             LOG.info(" - download only core: "
                                              + str(topic))
                                             os.remove(Json_inWork)
+                                            LOG.info(" - removed toDownload (not core): " + str(Json_inWork))
                                             if monitor_metrics == "True":
-                                                monErrors.inc()
+                                                monNotCore.labels(topic_country).inc()
+                                                monNotCore.labels("ALL").inc()
                                     else:
                                         try:
                                             createNewDownloadThread(
@@ -1170,24 +1091,28 @@ if os.path.isdir(inputDir):
                                                     integrity_method,
                                                     data_id,
                                                     Json_inWork,
-                                                    pub_client)
+                                                    pub_client,
+                                                    topic_country)
+                                            if "/recommended/" in topic:
+                                                if monitor_metrics == "True":
+                                                    monNotCore.labels("ALL").inc()
+                                                    monNotCore.labels(topic_country).inc()
                                         except BaseException as e:
                                             LOG.error(" - createNewDownloadThread: "
                                               + sourceUrl + " error was: " + str(e))
                                             move_json2error(Json_inWork)
                                             if monitor_metrics == "True":
-                                                monErrors.inc()
+                                                monErrors.labels("ALL").inc()
+                                                monErrors.labels(topic_country).inc()
                     except Exception as e:
+                        LOG.error(" - global try except error occurred")
                         LOG.error(e)
+                        if monitor_metrics == "True":
+                            monErrors.labels("ALL").inc()
                     inputFiles.remove(item)
-                    LOG.info(" - inputFiles reduced to: " + str(len(inputFiles)))
-            else:
-                LOG.warning(" - all threads in use")
-                time.sleep(2)
-        if len(inputFiles) == 0:
-            LOG.info(" - WAITING for input files")
-            time.sleep(2)
-        else:
-            LOG.info(" - input files count is: " + str(len(inputFiles)))
+                    LOG.debug(" - inputFiles reduced to: " + str(len(inputFiles)))
+                else:
+                    LOG.warning(" - all threads in use")
+                    time.sleep(2)
 else:
     LOG.error(" - inputDir (toDoDir) not found")
