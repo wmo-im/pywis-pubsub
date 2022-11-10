@@ -48,21 +48,26 @@ python3 setup.py install
 
 ```bash
 cp pywis-pubsub-config-example.yml local.yml
-vi local.yml # update accordingly
+cp pub-config-example.yml pub-local.yml
+vi local.yml # update accordingly to configure subscribe-options
+vi pub-local.yml # update accordingly to configure publish-options
 
 pywis-pubsub --version
 
-# connect, and simply echo messages
+# subscribe, and simply echo messages
 pywis-pubsub subscribe --config local.yml
 
-# connect, and download messages
+# subscribe, and download data from message
 pywis-pubsub subscribe --config local.yml --download
 
-# connect, and filter messages by geometry
+# subscribe, and filter messages by geometry
 pywis-pubsub subscribe --config local.yml --bbox=-142,42,-52,84
 
-# connect, and filter messages by geometry, increase debugging verbosity
+# subscribe, and filter messages by geometry, increase debugging verbosity
 pywis-pubsub subscribe --config local.yml --bbox=-142,42,-52,84 --verbosity=DEBUG
+
+# publish a WIS2-message with data-url=http://www.meteo.xx/mydata.bufr4 and lon,lat=33.8,11.8
+pywis-pubsub publish --config pub-local.yml -u http://www.meteo.xx/mydata.bufr4 -g 33.8,-11.8
 ```
 
 ### Using the API

@@ -1,0 +1,37 @@
+name: test-pubish-subscribe.yml
+
+on:
+  [ push, pull_request ]
+    
+jobs:
+  test-pubish-subscribe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v2
+        name: setup Python
+        with:
+          python-version: 3.8
+      - name: Install pywis-pubsub
+        run: |
+          python3 setup.py build
+          python3 setup.py install
+      - name: check versions
+        run: |
+          docker version
+          docker-compose version
+          python3 -V
+          pywis-pubsub --version
+      - name: run mosquitto container
+        run: |
+          docker run --rm -d -p 1883:1883 -v test-data/mosquitto.conf:/mosquitto/config/mosquitto.conf --name pywis_pubsub-mqtt eclipse-mosquitto
+      - name: start subscriber, in background
+        run: |
+          pywis-pubsub subscribe --config test-data/sub-config.yml --download &
+      - name: publish WIS2-notification for file in test-bucket
+        run: |
+          pywis-pubsub publish --config test-data/pub-config.yml -u https://pywis-pubsub-test.s3.eu-central-1.amazonaws.com/WIGOS_0-454-2-AWSCHIKANGAWA_20221109T135500.bufr4 -g 33.8025,-11.8415 -w 0-454-2-AWSCHIKANGAWA
+      - name: check download
+        run: |
+          ls -lh test-data/WIGOS_0-454-2-AWSCHIKANGAWA_20221109T135500.bufr4
+      
