@@ -1,9 +1,0 @@
-paho-mqtt
-requests
-urllib3
-websocket-client
-jsonschema
-parse
-uuid
-prometheus-client
-thread6
