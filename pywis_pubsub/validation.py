@@ -22,9 +22,9 @@
 import logging
 from typing import Tuple
 
-from jsonschema import RefResolver, validate
+from jsonschema import validate
 
-from pywis_pubsub.util import MESSAGE_SCHEMA
+from pywis_pubsub.util import MESSAGE_SCHEMA, yaml_load
 
 LOGGER = logging.getLogger(__name__)
 
@@ -42,13 +42,11 @@ def validate_message(instance: dict) -> Tuple[bool, str]:
     success = False
     error_message = None
 
-    schema = str(MESSAGE_SCHEMA)
-    schema_dir = MESSAGE_SCHEMA.parent
-    resolver = RefResolver(base_uri=f'file://{schema_dir}/',
-                           referrer=schema)
+    with open(MESSAGE_SCHEMA) as fh:
+        schema = yaml_load(fh)
 
     try:
-        validate(instance, schema, resolver=resolver)
+        validate(instance, schema)
         success = True
     except Exception as err:
         import traceback
