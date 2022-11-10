@@ -38,7 +38,7 @@ cd pywis-pubsub
 source bin/activate
 
 # clone codebase and install
-git clone https://github.com/geopython/pywis-pubsub.git
+git clone https://github.com/wmo-im/pywis-pubsub.git
 cd pywis-pubsub
 python3 setup.py build
 python3 setup.py install
