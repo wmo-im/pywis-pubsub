@@ -21,15 +21,26 @@ jobs:
       - name: run mosquitto container, detached
         run: |
           docker run --rm -d -p 1883:1883 -v $PWD/test-data/mosquitto.conf:/mosquitto/config/mosquitto.conf --name pywis_pubsub-mqtt eclipse-mosquitto
-      - name: subscriber & publish
+      - name: subscribe & publish, WITHOUT message validation
         run: |
-          echo "subscribe:" > subscribe.log
-          pywis-pubsub subscribe --config test-data/sub-config.yml --download >> subcribe.log &
+          rm -rf test-data/*.bufr4
+          echo "subscribe-with-msg-validation:" > subscribe1.log
+          sleep 1
+          pywis-pubsub subscribe --config test-data/sub-no-msg-validation.yml --download >> subcribe1.log &
           sleep 1
           pywis-pubsub publish --config test-data/pub-config.yml -u https://pywis-pubsub-test.s3.eu-central-1.amazonaws.com/WIGOS_0-454-2-AWSCHIKANGAWA_20221109T135500.bufr4 -g 33.8025,-11.8415 -w 0-454-2-AWSCHIKANGAWA
           sleep 1
-          cat subscribe.log   
+          cat subscribe1.log   
       - name: check download
         run: |
           ls -lh test-data/WIGOS_0-454-2-AWSCHIKANGAWA_20221109T135500.bufr4
+      - name: subscribe & publish, WITH message validation
+        run: |
+          echo "subscribe-without-msg-validation:" > subscribe2.log
+          sleep 1
+          pywis-pubsub subscribe --config test-data/sub-with-msg-validation.yml --download >> subcribe2.log &
+          sleep 1
+          pywis-pubsub publish --config test-data/pub-config.yml -u https://pywis-pubsub-test.s3.eu-central-1.amazonaws.com/WIGOS_0-454-2-AWSCHIKANGAWA_20221109T135500.bufr4 -g 33.8025,-11.8415 -w 0-454-2-AWSCHIKANGAWA
+          sleep 1
+          cat subscribe2.log  
       
