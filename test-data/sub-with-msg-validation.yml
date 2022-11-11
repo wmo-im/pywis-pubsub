@@ -10,7 +10,7 @@ topics:
 verify_data: true
 
 # whether to validate message against schema
-validate_message: false
+validate_message: true
 
 # storage: filesystem
 storage:
