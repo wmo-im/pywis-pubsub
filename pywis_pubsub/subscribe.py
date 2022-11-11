@@ -75,9 +75,11 @@ def get_data(msg_dict: dict) -> bytes:
     if canonical_link:
         LOGGER.debug(f'Found canonical link: {canonical_link}')
 
-    if 'content' in msg_dict['properties'] and 'value' in msg_dict['properties']['content']:
+    props = msg_dict['properties']
+
+    if 'content' in props and 'value' in props['content']:
         LOGGER.debug('Decoding from inline data')
-        data = base64.b64decode(msg_dict['properties']['content']['value'])
+        data = base64.b64decode(props['content']['value'])
     else:
         LOGGER.debug(f"Downloading from {canonical_link['href']}")
         try:
