@@ -86,9 +86,10 @@ def get_file_info(public_data_url):
 @cli_options.OPTION_CONFIG
 @cli_options.OPTION_VERBOSITY
 @click.option('--url', '-u', help='url pointing to data-file')
+@click.option('--unique_id', '-i', help='unique file-id')
 @click.option('--geometry', '-g', help='geometry as lat,lon for example -g 34.07,-14.4 ') # noqa
 @click.option('--wigos_id', '-w', help='optional wigos-id')
-def publish(ctx, config, url, geometry=[], wigos_id=None, verbosity='NOTSET'):
+def publish(ctx, config, url, unique_id, geometry=[], wigos_id=None, verbosity='NOTSET'):
     """ Publish a WIS2-message for a given url and a set of coordinates """
 
     if config is None:
@@ -109,17 +110,19 @@ def publish(ctx, config, url, geometry=[], wigos_id=None, verbosity='NOTSET'):
     publish_datetime = datetime.utcnow().strftime(
             '%Y-%m-%dT%H:%M:%SZ'
     )
+    
+    # get filename, length and calculate checksum
+    # raises exception if file can not be accessed
+    file_info = get_file_info(url)
+    
     latlon = [float(i) for i in geometry.split(',')]
     geometry = {
         "type": "Point",
         "coordinates": latlon
     }
-    # get filename, length and calculate checksum
-    # raises exception if file can not be accessed
-    file_info = get_file_info(url)
 
     message = {
-            'id': file_info['filename'],
+            'id': unique_id,
             'type': 'Feature',
             'version': 'v04',
             'geometry': geometry,
