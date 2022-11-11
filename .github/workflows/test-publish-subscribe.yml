@@ -1,4 +1,4 @@
-name: test-pubish-subscribe.yml
+name: test-publish-subscribe.yml
 
 on:
   [ push, pull_request ]

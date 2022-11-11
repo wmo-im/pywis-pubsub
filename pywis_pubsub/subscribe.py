@@ -150,7 +150,10 @@ def on_message_handler(client, userdata, msg):
 
             method = msg_dict['properties']['integrity']['method']
             value = msg_dict['properties']['integrity']['value']
-            size = msg_dict['properties']['content']['size']
+            if 'content' in ['properties']['content']:
+                size = msg_dict['properties']['content']['size']
+            else: 
+                size = get_canonical_link(msg_dict['links'])['length']
 
             if not data_verified(data, size, method, value):
                 LOGGER.error('Data verification failed; not saving')
