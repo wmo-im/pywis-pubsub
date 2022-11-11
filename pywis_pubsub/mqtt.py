@@ -30,9 +30,10 @@ from pywis_pubsub import util
 
 LOGGER = logging.getLogger(__name__)
 
+
 class MQTTPubSubClient:
     """MQTT PubSub client"""
-    def __init__(self, broker: str, options: dict = {} ) -> None:
+    def __init__(self, broker: str, options: dict = {}) -> None:
         """
         PubSub initializer
 

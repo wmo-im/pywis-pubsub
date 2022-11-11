@@ -3,5 +3,4 @@ click
 paho-mqtt
 pyyaml
 shapely
-wheel
-jsonschema @ git+https://github.com/tomkralidis/jsonschema@ref-yaml
+jsonschema

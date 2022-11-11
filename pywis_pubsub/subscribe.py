@@ -44,6 +44,7 @@ class VerificationMethods(enum.Enum):
     md5 = 'md5'
     sha512 = 'sha512'
 
+
 def get_canonical_link(links: list):
     """
     Helper function to derive canonical link from a list of link objects

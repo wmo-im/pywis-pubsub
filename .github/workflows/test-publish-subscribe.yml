@@ -14,6 +14,7 @@ jobs:
           python-version: 3.8
       - name: Install pywis-pubsub
         run: |
+          pip3 install wheel
           python3 setup.py build
           python3 setup.py install
       - name: check versions
@@ -22,7 +23,7 @@ jobs:
           docker-compose version
           python3 -V
           pywis-pubsub --version
-      - name: run mosquitto container
+      - name: run mosquitto container, detached
         run: |
           docker run --rm -d -p 1883:1883 -v test-data/mosquitto.conf:/mosquitto/config/mosquitto.conf --name pywis_pubsub-mqtt eclipse-mosquitto
       - name: start subscriber, in background

@@ -26,6 +26,7 @@ import click
 from pywis_pubsub.subscribe import subscribe
 from pywis_pubsub.publish import publish
 
+
 @click.group()
 @click.version_option(version=__version__)
 def cli():

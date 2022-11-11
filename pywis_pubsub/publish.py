@@ -35,15 +35,22 @@ from enum import Enum
 
 LOGGER = logging.getLogger(__name__)
 
-MIMETYPES = {
-    'application/x-bufr',
-    'application/x-grib2',
-    'application/json'
-}
 
 class SecureHashAlgorithms(Enum):
     SHA512 = 'sha512'
     MD5 = 'md5'
+
+
+MIMETYPES = [
+    'text/plain',
+    'text/csv',
+    'application/octet-stream',
+    'application/text',
+    'application/json',
+    'application/x-bufr',
+    'application/x-grib2'
+    ]
+
 
 def generate_checksum(bytes, algorithm: SecureHashAlgorithms) -> str:  # noqa
     """
@@ -58,6 +65,7 @@ def generate_checksum(bytes, algorithm: SecureHashAlgorithms) -> str:  # noqa
     sh.update(bytes)
     return sh.hexdigest()
 
+
 def get_file_info(public_data_url):
     """ get filename, length and calculate checksum from public-file-url """
     res = requests.get(public_data_url)
@@ -66,18 +74,19 @@ def get_file_info(public_data_url):
     filebytes = res.content
     checksum_type = SecureHashAlgorithms.SHA512.value
     return {
-        'filename' : public_data_url.split('/')[-1],
-        'checksum_value' : generate_checksum(filebytes,checksum_type),
-        'checksum_type' : checksum_type,
-        'size' : len(filebytes)
+        'filename': public_data_url.split('/')[-1],
+        'checksum_value': generate_checksum(filebytes, checksum_type),
+        'checksum_type': checksum_type,
+        'size': len(filebytes)
     }
+
 
 @click.command()
 @click.pass_context
 @cli_options.OPTION_CONFIG
 @cli_options.OPTION_VERBOSITY
 @click.option('--url', '-u', help='url pointing to data-file')
-@click.option('--geometry', '-g', help='geometry, defined as lon,lat , for example -g 34.07,-14.4 ')
+@click.option('--geometry', '-g', help='geometry as lat,lon for example -g 34.07,-14.4 ') # noqa
 @click.option('--wigos_id', '-w', help='optional wigos-id')
 def publish(ctx, config, url, geometry=[], wigos_id=None, verbosity='NOTSET'):
     """ Publish a WIS2-message for a given url and a set of coordinates """
@@ -94,7 +103,7 @@ def publish(ctx, config, url, geometry=[], wigos_id=None, verbosity='NOTSET'):
         click.echo(f"options are: {MIMETYPES}")
         return
     file_encoding = 'utf-8'
-    if application_type in ['application/x-bufr','application/x-grib2']:
+    if application_type in ['application/x-bufr', 'application/x-grib2']:
         file_encoding = 'base64'
 
     publish_datetime = datetime.utcnow().strftime(
@@ -105,7 +114,8 @@ def publish(ctx, config, url, geometry=[], wigos_id=None, verbosity='NOTSET'):
         "type": "Point",
         "coordinates": latlon
     }
-    # get filename, length and calculate checksum, this will fail if file can not be accessed
+    # get filename, length and calculate checksum
+    # raises exception if file can not be accessed
     file_info = get_file_info(url)
 
     message = {
@@ -137,4 +147,4 @@ def publish(ctx, config, url, geometry=[], wigos_id=None, verbosity='NOTSET'):
     client = MQTTPubSubClient(broker)
     click.echo(f'Connected to broker {client.broker_safe_url}')
     click.echo(f'Publish new message to topic={topic}')
-    client.pub(topic,json.dumps(message))
+    client.pub(topic, json.dumps(message))
