@@ -24,9 +24,6 @@ import os
 import re
 from setuptools import Command, find_packages, setup
 import sys
-from urllib.request import urlopen
-
-from pywis_pubsub.util import MESSAGE_SCHEMA
 
 
 class PyTest(Command):
@@ -71,18 +68,6 @@ from WIS 2.0 infrastructure services.
 
 if os.path.exists('MANIFEST'):
     os.unlink('MANIFEST')
-
-print('Caching notification message schema')
-
-MESSAGE_SCHEMA_URL = 'https://raw.githubusercontent.com/wmo-im/wis2-notification-message/main/WIS2_Message_Format_Schema.yaml'  # noqa
-
-if not MESSAGE_SCHEMA.parent.exists():
-    print('Downloading message schema')
-    MESSAGE_SCHEMA.parent.mkdir(parents=True, exist_ok=True)
-
-    with MESSAGE_SCHEMA.open('wb') as fh:
-        fh.write(urlopen(MESSAGE_SCHEMA_URL).read())
-
 
 setup(
     name='pywis-pubsub',

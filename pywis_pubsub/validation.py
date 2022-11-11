@@ -22,9 +22,11 @@
 import logging
 from typing import Tuple
 
-from jsonschema import RefResolver, validate
+from jsonschema import validate
 
-from pywis_pubsub.util import MESSAGE_SCHEMA
+from pywis_pubsub.util import MESSAGE_SCHEMA, yaml_load
+
+from urllib.request import urlopen
 
 LOGGER = logging.getLogger(__name__)
 
@@ -32,9 +34,7 @@ LOGGER = logging.getLogger(__name__)
 def validate_message(instance: dict) -> Tuple[bool, str]:
     """
     Validate a JSON instance document against an JSON schema
-
     :param instance: `dict` of JSON
-
     :return: `tuple` of `bool` of validation result
              and `str` of error message(s)
     """
@@ -42,17 +42,23 @@ def validate_message(instance: dict) -> Tuple[bool, str]:
     success = False
     error_message = None
 
-    schema = str(MESSAGE_SCHEMA)
-    schema_dir = MESSAGE_SCHEMA.parent
-    resolver = RefResolver(base_uri=f'file://{schema_dir}/',
-                           referrer=schema)
+    # cache the message-schema the first time validate_message is called
+    if not MESSAGE_SCHEMA.parent.exists():
+        MESSAGE_SCHEMA_URL = 'https://raw.githubusercontent.com/wmo-im/wis2-notification-message/main/WIS2_Message_Format_Schema.yaml'  # noqa
+        print('Caching notification message schema')
+        MESSAGE_SCHEMA.parent.mkdir(parents=True, exist_ok=True)
+        with MESSAGE_SCHEMA.open('wb') as fh:
+            fh.write(urlopen(MESSAGE_SCHEMA_URL).read())
+
+    with open(MESSAGE_SCHEMA) as fh:
+        schema = yaml_load(fh)
 
     try:
-        validate(instance, schema, resolver=resolver)
+        validate(instance, schema)
         success = True
     except Exception as err:
-        import traceback
-        print(traceback.format_exc())
-        error_message = err
+        # str(err) is too verbose
+        # repr(err) is enough to display the issue
+        error_message = repr(err)
 
     return (success, error_message)
