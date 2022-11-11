@@ -89,7 +89,7 @@ def get_file_info(public_data_url):
 @click.option('--unique_id', '-i', help='unique file-id')
 @click.option('--geometry', '-g', help='geometry as lat,lon for example -g 34.07,-14.4 ') # noqa
 @click.option('--wigos_id', '-w', help='optional wigos-id')
-def publish(ctx, config, url, unique_id, geometry=[], wigos_id=None, verbosity='NOTSET'):
+def publish(ctx, config, url, unique_id, geometry=[], wigos_id=None, verbosity='NOTSET'): # noqa
     """ Publish a WIS2-message for a given url and a set of coordinates """
 
     if config is None:
@@ -103,18 +103,15 @@ def publish(ctx, config, url, unique_id, geometry=[], wigos_id=None, verbosity='
         click.echo(f"application_type={application_type} is invalid")
         click.echo(f"options are: {MIMETYPES}")
         return
-    file_encoding = 'utf-8'
-    if application_type in ['application/x-bufr', 'application/x-grib2']:
-        file_encoding = 'base64'
 
     publish_datetime = datetime.utcnow().strftime(
             '%Y-%m-%dT%H:%M:%SZ'
     )
-    
+
     # get filename, length and calculate checksum
     # raises exception if file can not be accessed
     file_info = get_file_info(url)
-    
+
     latlon = [float(i) for i in geometry.split(',')]
     geometry = {
         "type": "Point",
@@ -132,10 +129,6 @@ def publish(ctx, config, url, unique_id, geometry=[], wigos_id=None, verbosity='
                 'integrity': {
                     'method': file_info['checksum_type'],
                     'value': file_info['checksum_value']
-                },
-                'content': {
-                    'size': file_info['size'],
-                    'encoding': file_encoding
                 },
             },
             'links': [{
