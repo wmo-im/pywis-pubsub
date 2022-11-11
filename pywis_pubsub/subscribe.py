@@ -152,7 +152,7 @@ def on_message_handler(client, userdata, msg):
             value = msg_dict['properties']['integrity']['value']
             if 'content' in ['properties']['content']:
                 size = msg_dict['properties']['content']['size']
-            else: 
+            else:
                 size = get_canonical_link(msg_dict['links'])['length']
 
             if not data_verified(data, size, method, value):
