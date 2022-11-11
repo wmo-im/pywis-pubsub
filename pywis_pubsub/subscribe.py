@@ -163,14 +163,8 @@ def on_message_handler(client, userdata, msg):
             else:
                 LOGGER.debug('Data verification passed')
 
-        try:
-            basepath = Path(msg_dict['properties']['hierarchy'])
-            filename = basepath / msg_dict['properties']['instance_identifier']
-        except KeyError as err:
-            LOGGER.warning(f'Missing property: {err}')
-            link = Path(get_canonical_link(msg_dict['links'])['href'])
-            basepath = link.parent
-            filename = link.name
+        link = Path(get_canonical_link(msg_dict['links'])['href'])
+        filename = link.name
 
         storage_class = STORAGES[userdata.get('storage').get('type')]
         storage_object = storage_class(userdata['storage'])
