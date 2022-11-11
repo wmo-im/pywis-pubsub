@@ -134,7 +134,8 @@ def publish(ctx, config, url, unique_id, geometry=[], wigos_id=None, verbosity='
             'links': [{
                 'rel': 'canonical',
                 'type': application_type,
-                'href': url
+                'href': url,
+                'length': file_info['size']
             }]
     }
     if wigos_id is not None:
