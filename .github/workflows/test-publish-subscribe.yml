@@ -8,24 +8,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v3
         name: setup Python
         with:
           python-version: 3.8
       - name: Install pywis-pubsub
         run: |
           pip3 install wheel
-          python3 setup.py build
           python3 setup.py install
-      - name: check versions
-        run: |
-          docker version
-          docker-compose version
-          python3 -V
+          python3 setup.py build
           pywis-pubsub --version
       - name: run mosquitto container, detached
         run: |
-          docker run --rm -d -p 1883:1883 -v test-data/mosquitto.conf:/mosquitto/config/mosquitto.conf --name pywis_pubsub-mqtt eclipse-mosquitto
+          docker run --rm -d -p 1883:1883 -v $PWD/test-data/mosquitto.conf:/mosquitto/config/mosquitto.conf --name pywis_pubsub-mqtt eclipse-mosquitto
       - name: start subscriber, in background
         run: |
           pywis-pubsub subscribe --config test-data/sub-config.yml --download &

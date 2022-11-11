@@ -40,8 +40,9 @@ source bin/activate
 # clone codebase and install
 git clone https://github.com/wmo-im/pywis-pubsub.git
 cd pywis-pubsub
-python3 setup.py build
+pip3 install wheel
 python3 setup.py install
+python3 setup.py build
 ```
 
 ## Running

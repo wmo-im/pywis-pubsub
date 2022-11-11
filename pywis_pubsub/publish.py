@@ -124,7 +124,7 @@ def publish(ctx, config, url, geometry=[], wigos_id=None, verbosity='NOTSET'):
             'version': 'v04',
             'geometry': geometry,
             'properties': {
-                'data-id': f"{topic}/{file_info['filename']}",
+                'data_id': f"{topic}/{file_info['filename']}",
                 'pubtime': publish_datetime,
                 'integrity': {
                     'method': file_info['checksum_type'],
