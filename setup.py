@@ -19,14 +19,11 @@
 #
 ###############################################################################
 
-import io
-import os
+from pathlib import Path
 import re
 from setuptools import Command, find_packages, setup
 import sys
 from urllib.request import urlopen
-
-from pywis_pubsub.util import MESSAGE_SCHEMA
 
 
 class PyTest(Command):
@@ -46,8 +43,10 @@ class PyTest(Command):
 
 def read(filename, encoding='utf-8'):
     """read file contents"""
-    full_path = os.path.join(os.path.dirname(__file__), filename)
-    with io.open(full_path, encoding=encoding) as fh:
+
+    fullpath = Path(__file__).resolve().parent / filename
+
+    with fullpath.open() as fh:
         contents = fh.read().strip()
     return contents
 
@@ -69,12 +68,18 @@ pywis-pubsub provides subscription and download capability of WMO data
 from WIS 2.0 infrastructure services.
 """
 
-if os.path.exists('MANIFEST'):
-    os.unlink('MANIFEST')
+MANIFEST = Path('MANIFEST')
+
+if MANIFEST.exists():
+    MANIFEST.unlink()
 
 print('Caching notification message schema')
 
 MESSAGE_SCHEMA_URL = 'https://raw.githubusercontent.com/wmo-im/wis2-notification-message/main/WIS2_Message_Format_Schema.yaml'  # noqa
+
+USERDIR = Path.home() / '.pywis-pubsub'
+MESSAGE_SCHEMA = USERDIR / 'wis2-notification-message' / 'WIS2_Message_Format_Schema.yaml'  # noqa
+
 
 if not MESSAGE_SCHEMA.parent.exists():
     print('Downloading message schema')
