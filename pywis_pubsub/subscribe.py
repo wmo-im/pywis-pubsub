@@ -75,9 +75,9 @@ def get_data(msg_dict: dict) -> bytes:
     if canonical_link:
         LOGGER.debug(f'Found canonical link: {canonical_link}')
 
-    if 'content' in msg_dict and 'value' in msg_dict['content']:
+    if 'content' in msg_dict['properties'] and 'value' in msg_dict['properties']['content']:
         LOGGER.debug('Decoding from inline data')
-        data = base64.b64decode(msg_dict['content']['value'])
+        data = base64.b64decode(msg_dict['properties']['content']['value'])
     else:
         LOGGER.debug(f"Downloading from {canonical_link['href']}")
         try:
@@ -150,7 +150,7 @@ def on_message_handler(client, userdata, msg):
 
             method = msg_dict['properties']['integrity']['method']
             value = msg_dict['properties']['integrity']['value']
-            if 'content' in ['properties']['content']:
+            if 'content' in msg_dict['properties']:
                 size = msg_dict['properties']['content']['size']
             else:
                 size = get_canonical_link(msg_dict['links'])['length']
