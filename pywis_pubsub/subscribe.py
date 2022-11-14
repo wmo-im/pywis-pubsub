@@ -209,12 +209,16 @@ def on_message_handler(client, userdata, msg):
     msg_dict = json.loads(msg.payload)
     msg_json = json.dumps(msg_dict, indent=4)
 
-    if userdata.get('validate_message', False):
-        LOGGER.debug('Validating message')
-        success, err = validate_message(msg_dict)
-        if not success:
-            LOGGER.error(f'Message is not a valid notification: {err}')
-            return
+    try:
+        if userdata.get('validate_message', False):
+            LOGGER.debug('Validating message')
+            success, err = validate_message(msg_dict)
+            if not success:
+                LOGGER.error(f'Message is not a valid notification: {err}')
+                return
+    except RuntimeError as err:
+        LOGGER.error(f'Cannot validate message: {err}')
+        return
 
     LOGGER.debug(f'Topic: {msg.topic}')
     LOGGER.debug(f'Raw message:\n{msg_json}')
