@@ -41,7 +41,7 @@ class SecureHashAlgorithms(Enum):
     MD5 = 'md5'
 
 
-def generate_checksum(bytes, algorithm: SecureHashAlgorithms) -> str:  # noqa
+def generate_checksum(bytes: int, algorithm: SecureHashAlgorithms) -> str:
     """
     Generate a checksum of message file
 
@@ -55,7 +55,7 @@ def generate_checksum(bytes, algorithm: SecureHashAlgorithms) -> str:  # noqa
     return sh.hexdigest()
 
 
-def get_file_info(public_data_url):
+def get_file_info(public_data_url: str) -> dict:
     """
     get filename, length and calculate checksum from public-file-url
 
@@ -75,7 +75,7 @@ def get_file_info(public_data_url):
         'size': len(filebytes)
     }
 
-def prepare_message(topic, content_type, url, identifier, geometry=[], wigos_station_identifier=None) -> dict: # noqa
+def prepare_message(topic: str, content_type: str, url: str, identifier: str, geometry=[], wigos_station_identifier: str=None) -> dict: # noqa
     """
     prepare WIS2-compliant message
 
