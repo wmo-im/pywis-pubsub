@@ -18,6 +18,7 @@ jobs:
           python3 setup.py install
           python3 setup.py build
           pywis-pubsub --version
+          pywis-pubsub schema sync
       - name: run mosquitto container, detached
         run: |
           docker run --rm -d -p 1883:1883 -v $PWD/test-data/mosquitto.conf:/mosquitto/config/mosquitto.conf --name pywis_pubsub-mqtt eclipse-mosquitto
