@@ -33,9 +33,11 @@ USERDIR = Path.home() / '.pywis-pubsub'
 MESSAGE_SCHEMA = USERDIR / 'wis2-notification-message' / 'WIS2_Message_Format_Schema.yaml'  # noqa
 
 
-def cache_schema():
+def cache_schema() -> None:
     """
-    Cache WIS2 notification schema:w
+    Cache WIS2 notification schema
+
+    :returns: `None`
     """
 
     LOGGER.debug('Caching notification message schema')
