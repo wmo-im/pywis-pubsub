@@ -52,8 +52,8 @@ vi local.yml # update accordingly
 
 pywis-pubsub --version
 
-# cache WIS2 notification schema
-pywis-pubsub schema cache
+# sync WIS2 notification schema
+pywis-pubsub schema sync
 
 # connect, and simply echo messages
 pywis-pubsub subscribe --config local.yml

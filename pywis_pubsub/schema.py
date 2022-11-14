@@ -22,6 +22,7 @@
 import click
 import logging
 from pathlib import Path
+import shutil
 from urllib.request import urlopen
 
 from pywis_pubsub import cli_options
@@ -33,18 +34,19 @@ USERDIR = Path.home() / '.pywis-pubsub'
 MESSAGE_SCHEMA = USERDIR / 'wis2-notification-message' / 'WIS2_Message_Format_Schema.yaml'  # noqa
 
 
-def cache_schema() -> None:
+def sync_schema() -> None:
     """
-    Cache WIS2 notification schema
+    Sync WIS2 notification schema
 
     :returns: `None`
     """
 
-    LOGGER.debug('Caching notification message schema')
+    LOGGER.debug('Syncing notification message schema')
 
-    if not MESSAGE_SCHEMA.parent.exists():
-        LOGGER.debug(f'Creating cache directory {MESSAGE_SCHEMA.parent}')
-        MESSAGE_SCHEMA.parent.mkdir(parents=True, exist_ok=True)
+    if MESSAGE_SCHEMA.parent.exists():
+        shutil.rmtree(USERDIR)
+
+    MESSAGE_SCHEMA.parent.mkdir(parents=True, exist_ok=True)
 
     LOGGER.debug('Downloading message schema')
     with MESSAGE_SCHEMA.open('wb') as fh:
@@ -60,11 +62,11 @@ def schema():
 @click.command()
 @click.pass_context
 @cli_options.OPTION_VERBOSITY
-def cache(ctx, verbosity):
-    """Cache WIS2 notification schema"""
+def sync(ctx, verbosity):
+    """Sync WIS2 notification schema"""
 
-    click.echo('Caching notification message schema')
-    cache_schema()
+    click.echo('Syncing notification message schema')
+    sync_schema()
 
 
-schema.add_command(cache)
+schema.add_command(sync)

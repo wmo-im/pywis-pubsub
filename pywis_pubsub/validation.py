@@ -44,7 +44,7 @@ def validate_message(instance: dict) -> Tuple[bool, str]:
     error_message = None
 
     if not MESSAGE_SCHEMA.exists():
-        msg = 'Schema not found. Please run pywis-pubsub schema cache'
+        msg = 'Schema not found. Please run pywis-pubsub schema sync'
         LOGGER.error(msg)
         raise RuntimeError(msg)
 
