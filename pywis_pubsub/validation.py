@@ -27,8 +27,6 @@ from jsonschema import validate
 from pywis_pubsub.schema import MESSAGE_SCHEMA
 from pywis_pubsub.util import yaml_load
 
-from urllib.request import urlopen
-
 LOGGER = logging.getLogger(__name__)
 
 
