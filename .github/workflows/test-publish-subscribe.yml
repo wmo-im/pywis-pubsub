@@ -14,7 +14,6 @@ jobs:
           python-version: 3.8
       - name: Install pywis-pubsub
         run: |
-          pip3 install wheel
           python3 setup.py install
           python3 setup.py build
           pywis-pubsub --version
