@@ -137,6 +137,9 @@ def on_message_handler(client, userdata, msg):
             LOGGER.debug('Message geometry not within bbox; skipping')
             return
 
+    clink = get_canonical_link(msg_dict['links'])
+    LOGGER.info(f"Received message with data-url {clink['href']}")
+
     if userdata.get('storage') is not None:
         LOGGER.debug('Saving data')
         try:
@@ -145,7 +148,6 @@ def on_message_handler(client, userdata, msg):
         except Exception as err:
             LOGGER.error(err)
             return
-
         if ('integrity' in msg_dict['properties'] and
                 userdata.get('verify_data', True)):
             LOGGER.debug('Verifying data')
@@ -155,7 +157,7 @@ def on_message_handler(client, userdata, msg):
             if 'content' in msg_dict['properties']:
                 size = msg_dict['properties']['content']['size']
             else:
-                size = get_canonical_link(msg_dict['links'])['length']
+                size = clink['length']
 
             if not data_verified(data, size, method, value):
                 LOGGER.error('Data verification failed; not saving')
@@ -163,7 +165,7 @@ def on_message_handler(client, userdata, msg):
             else:
                 LOGGER.debug('Data verification passed')
 
-        link = Path(get_canonical_link(msg_dict['links'])['href'])
+        link = Path(clink['href'])
         filename = link.name
 
         storage_class = STORAGES[userdata.get('storage').get('type')]

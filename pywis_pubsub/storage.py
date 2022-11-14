@@ -58,7 +58,7 @@ class FileSystem(Storage):
         with filepath.open('wb') as fh:
             fh.write(data)
 
-        LOGGER.debug('Data saved')
+        LOGGER.info(f'Data saved to {filename}')
 
         return True
 
@@ -80,7 +80,7 @@ class S3(Storage):
             LOGGER.error(err)
             return False
 
-        LOGGER.debug('Data saved')
+        LOGGER.info(f'Data saved to {filename}')
 
         return True
 
