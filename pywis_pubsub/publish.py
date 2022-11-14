@@ -80,6 +80,44 @@ def get_file_info(public_data_url):
         'size': len(filebytes)
     }
 
+def prepare_message(topic, application_type, url, unique_id, geometry=[], wigos_id=None) -> dict: # noqa
+    """ prepare WIS2-compliant message """
+
+    publish_datetime = datetime.utcnow().strftime(
+            '%Y-%m-%dT%H:%M:%SZ'
+    )
+    # get filename, length and calculate checksum
+    # raises HTTPError if file can not be accessed
+    file_info = get_file_info(url)
+    latlon = [float(i) for i in geometry.split(',')]
+    geometry = {
+        "type": "Point",
+        "coordinates": latlon
+    }
+    message = {
+            'id': unique_id,
+            'type': 'Feature',
+            'version': 'v04',
+            'geometry': geometry,
+            'properties': {
+                'data_id': f"{topic}/{file_info['filename']}",
+                'pubtime': publish_datetime,
+                'integrity': {
+                    'method': file_info['checksum_type'],
+                    'value': file_info['checksum_value']
+                },
+            },
+            'links': [{
+                'rel': 'canonical',
+                'type': application_type,
+                'href': url,
+                'length': file_info['size']
+            }]
+    }
+    if wigos_id is not None:
+        message['properties']['wigos_station_identifier'] = wigos_id  # noqa
+    return message
+
 
 @click.command()
 @click.pass_context
@@ -104,42 +142,14 @@ def publish(ctx, config, url, unique_id, geometry=[], wigos_id=None, verbosity='
         click.echo(f"options are: {MIMETYPES}")
         return
 
-    publish_datetime = datetime.utcnow().strftime(
-            '%Y-%m-%dT%H:%M:%SZ'
+    message = prepare_message(
+        topic=topic,
+        application_type=application_type,
+        url=url,
+        unique_id=unique_id,
+        geometry=geometry,
+        wigos_id=wigos_id
     )
-
-    # get filename, length and calculate checksum
-    # raises exception if file can not be accessed
-    file_info = get_file_info(url)
-
-    latlon = [float(i) for i in geometry.split(',')]
-    geometry = {
-        "type": "Point",
-        "coordinates": latlon
-    }
-
-    message = {
-            'id': unique_id,
-            'type': 'Feature',
-            'version': 'v04',
-            'geometry': geometry,
-            'properties': {
-                'data_id': f"{topic}/{file_info['filename']}",
-                'pubtime': publish_datetime,
-                'integrity': {
-                    'method': file_info['checksum_type'],
-                    'value': file_info['checksum_value']
-                },
-            },
-            'links': [{
-                'rel': 'canonical',
-                'type': application_type,
-                'href': url,
-                'length': file_info['size']
-            }]
-    }
-    if wigos_id is not None:
-        message['properties']['wigos_station_identifier'] = wigos_id  # noqa
 
     client = MQTTPubSubClient(broker)
     click.echo(f'Connected to broker {client.broker_safe_url}')
