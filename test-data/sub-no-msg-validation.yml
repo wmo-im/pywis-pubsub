@@ -1,0 +1,19 @@
+
+# RFC1738 URL
+broker: mqtt://localhost:1883
+
+# list of topics to subscribe to
+topics:
+    - 'origin/a/wis2/mwi/malawi_wmo_demo/data/core/weather/surface-based-observations/synop'
+
+# whether to verify data
+verify_data: true
+
+# whether to validate message against schema
+validate_message: false
+
+# storage: filesystem
+storage:
+    type: fs
+    options:
+        path: test-data/

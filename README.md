@@ -38,17 +38,26 @@ cd pywis-pubsub
 source bin/activate
 
 # clone codebase and install
-git clone https://github.com/geopython/pywis-pubsub.git
+git clone https://github.com/wmo-im/pywis-pubsub.git
 cd pywis-pubsub
-python3 setup.py build
+pip3 install wheel
 python3 setup.py install
+python3 setup.py build
 ```
 
 ## Running
 
+First check pywis-pubsub was correctly installed
+
+```bash
+pywis-pubsub --version
+```
+
+### subscribing
+
 ```bash
 cp pywis-pubsub-config-example.yml local.yml
-vi local.yml # update accordingly
+vim local.yml # update accordingly to configure subscribe-options
 
 pywis-pubsub --version
 
@@ -58,22 +67,37 @@ pywis-pubsub schema sync
 # connect, and simply echo messages
 pywis-pubsub subscribe --config local.yml
 
-# connect, and download messages
+# subscribe, and download data from message
 pywis-pubsub subscribe --config local.yml --download
 
-# connect, and filter messages by geometry
+# subscribe, and filter messages by geometry
 pywis-pubsub subscribe --config local.yml --bbox=-142,42,-52,84
 
-# connect, and filter messages by geometry, increase debugging verbosity
+# subscribe, and filter messages by geometry, increase debugging verbosity
 pywis-pubsub subscribe --config local.yml --bbox=-142,42,-52,84 --verbosity=DEBUG
+```
+
+### publishing
+
+```bash
+cp pub-config-example.yml pub-local.yml
+vim pub-local.yml # update accordingly to configure publish-options
+
+# example publishing a WIS2-message with attributes: 
+# unique-id=stationXYZ-20221111085500 
+# data-url=http://www.meteo.xx/stationXYZ-20221111085500.bufr4 
+# lon,lat=33.8,11.8
+# wigos-id=0-20000-12345
+pywis-pubsub publish --config pub-local.yml -i stationXYZ-20221111085500 -u http://www.meteo.xx/stationXYZ-20221111085500.bufr4 -g 33.8,-11.8 -w 0-20000-12345
 ```
 
 ### Using the API
 
-```python
-# Python API examples go here
+Python examples:
 
-from pywis_pubsub.subscribe import MQTTPubSubClient
+```python
+# subscriber example
+from pywis_pubsub.mqtt import MQTTPubSubClient
 
 options = {
     'storage': {
@@ -89,6 +113,24 @@ topics = [
 
 m = MQTTPubSubClient('mqtt://localhost:1883', options)
 m.sub(topics)
+```
+
+```python
+# publish example
+from pywis_pubsub.mqtt import MQTTPubSubClient
+from pywis_pubsub.publish import prepare_message
+
+message = prepare_message(
+        topic='foo/bar',
+        content_type='application/x-bufr',
+        url='http://www.meteo.xx/stationXYZ-20221111085500.bufr4', 
+        identifier='stationXYZ-20221111085500', 
+        geometry=[33.8,-11.8],
+        wigos_station_identifier='0-20000-12345'
+)
+
+m = MQTTPubSubClient('mqtt://localhost:1883')
+client.pub(topic, json.dumps(message))
 ```
 
 ## Development
@@ -126,3 +168,4 @@ All bugs, enhancements and issues are managed on [GitHub](https://github.com/wmo
 
 * [Antje Schremmer](https://github.com/antje-s)
 * [Tom Kralidis](https://github.com/tomkralidis)
+* [Maaike Limper](https://github.com/maaikelimper)

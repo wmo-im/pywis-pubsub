@@ -33,9 +33,7 @@ LOGGER = logging.getLogger(__name__)
 def validate_message(instance: dict) -> Tuple[bool, str]:
     """
     Validate a JSON instance document against an JSON schema
-
     :param instance: `dict` of JSON
-
     :return: `tuple` of `bool` of validation result
              and `str` of error message(s)
     """
@@ -55,8 +53,8 @@ def validate_message(instance: dict) -> Tuple[bool, str]:
         validate(instance, schema)
         success = True
     except Exception as err:
-        import traceback
-        print(traceback.format_exc())
-        error_message = err
+        # str(err) is too verbose
+        # repr(err) is enough to display the issue
+        error_message = repr(err)
 
     return (success, error_message)

@@ -1,6 +1,7 @@
 boto3
-click
-jsonschema
-paho-mqtt
+click==8.1.2
+paho-mqtt==1.6.1
 pyyaml
 shapely
+jsonschema
+requests

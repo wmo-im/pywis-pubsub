@@ -24,15 +24,20 @@ __version__ = '0.1.1'
 import click
 
 from pywis_pubsub.subscribe import subscribe
+from pywis_pubsub.publish import publish
 from pywis_pubsub.schema import schema
 
 
 @click.group()
 @click.version_option(version=__version__)
 def cli():
-    """WIS 2.0 PubSub subscribe and download utility"""
+    """WIS 2.0 utility class.
+    Subcriber and download data from WIS2-broker.
+    Publish new data-notification to WIS2-broker.
+    """
     pass
 
 
 cli.add_command(schema)
 cli.add_command(subscribe)
+cli.add_command(publish)
