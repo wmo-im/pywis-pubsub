@@ -19,6 +19,8 @@
 #
 ###############################################################################
 
+from datetime import datetime
+from enum import Enum
 import hashlib
 import json
 import logging
@@ -30,8 +32,6 @@ from pywis_pubsub import cli_options
 from pywis_pubsub import util
 from pywis_pubsub.mqtt import MQTTPubSubClient
 
-from datetime import datetime
-from enum import Enum
 
 LOGGER = logging.getLogger(__name__)
 
@@ -52,20 +52,23 @@ def generate_checksum(bytes: int, algorithm: SecureHashAlgorithms) -> str:
 
     sh = getattr(hashlib, algorithm)()
     sh.update(bytes)
+
     return sh.hexdigest()
 
 
 def get_file_info(public_data_url: str) -> dict:
     """
-    get filename, length and calculate checksum from public-file-url
+    get filename, length and calculate checksum from public URL
 
-    :param public_data_url: `str` defining publicly accessible data-url
+    :param public_data_url: `str` defining publicly accessible URL
 
-    :returns: dict
+    :returns: `dict` of file information
     """
+
     res = requests.get(public_data_url)
     # raise HTTPError, if on occurred:
     res.raise_for_status()
+
     filebytes = res.content
     checksum_type = SecureHashAlgorithms.SHA512.value
     return {
@@ -75,29 +78,33 @@ def get_file_info(public_data_url: str) -> dict:
         'size': len(filebytes)
     }
 
-def prepare_message(topic: str, content_type: str, url: str, identifier: str, geometry=[], wigos_station_identifier: str=None) -> dict: # noqa
+
+def prepare_message(topic: str, content_type: str, url: str, identifier: str,
+                    geometry = [], wigos_station_identifier: str = None) -> dict:  # noqa
     """
     prepare WIS2-compliant message
 
     :param topic: `str` of topic
     :url: `str` of url pointing to data
     :identifier: `str` of unique-id to help global broker deduplicate data
-    :geometry: array defining lon,lat and/or lon,lat/altitude
+    :geometry: point array defining longitude,latitude,elevation
+               (elevation is optional
     :wigos_station_identifier: `str` of WSI for station as used in OSCAR
 
-    :returns: dict
+    :returns: `dict` of message
     """
 
-    publish_datetime = datetime.utcnow().strftime(
-            '%Y-%m-%dT%H:%M:%SZ'
-    )
+    publish_datetime = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+
     # get filename, length and calculate checksum
     # raises HTTPError if file can not be accessed
     file_info = get_file_info(url)
-    latlon = [float(i) for i in geometry.split(',')]
+
+    point = [float(i) for i in geometry.split(',')]
+
     geometry = {
-        "type": "Point",
-        "coordinates": latlon
+        'type': 'Point',
+        'coordinates': point
     }
     message = {
             'id': identifier,
@@ -121,6 +128,7 @@ def prepare_message(topic: str, content_type: str, url: str, identifier: str, ge
     }
     if wigos_station_identifier is not None:
         message['properties']['wigos_station_identifier'] = wigos_station_identifier  # noqa
+
     return message
 
 
@@ -130,13 +138,17 @@ def prepare_message(topic: str, content_type: str, url: str, identifier: str, ge
 @cli_options.OPTION_VERBOSITY
 @click.option('--url', '-u', help='url pointing to data-file')
 @click.option('--identifier', '-i', help='unique file-id')
-@click.option('--geometry', '-g', help='geometry as lat,lon for example -g 34.07,-14.4 ') # noqa
-@click.option('--wigos_station_identifier', '-w', help='optional wigos-id')
-def publish(ctx, config, url, identifier, geometry=[], wigos_station_identifier=None, verbosity='NOTSET'): # noqa
-    """ Publish a WIS2-message for a given url and a set of coordinates """
+@click.option('--geometry', '-g',
+              help='point geometry as longitude,latitude,elevation (elevation is optional)')  # noqa
+@click.option('--wigos_station_identifier', '-w',
+              help='WIGOS station identifier')
+def publish(ctx, config, url, identifier, geometry=[],
+            wigos_station_identifier=None, verbosity='NOTSET'):
+    """Publish a WIS2-message for a given url and a set of coordinates"""
 
     if config is None:
         raise click.ClickException('missing --config/-c')
+
     config = util.yaml_load(config)
 
     broker = config.get('broker')

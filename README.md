@@ -1,4 +1,5 @@
 [![flake8](https://github.com/wmo-im/pywis-pubsub/workflows/flake8/badge.svg)](https://github.com/wmo-im/pywis-pubsub/actions)
+[![test-publish-subscribe-download](https://github.com/wmo-im/pywis-pubsub/workflows/test-publish-subscribe-download/badge.svg)](https://github.com/wmo-im/pywis-pubsub/actions)
 
 # pywis-pubsub
 
@@ -40,9 +41,7 @@ source bin/activate
 # clone codebase and install
 git clone https://github.com/wmo-im/pywis-pubsub.git
 cd pywis-pubsub
-pip3 install wheel
 python3 setup.py install
-python3 setup.py build
 ```
 
 ## Running
@@ -53,7 +52,7 @@ First check pywis-pubsub was correctly installed
 pywis-pubsub --version
 ```
 
-### subscribing
+### Subscribing
 
 ```bash
 cp pywis-pubsub-config-example.yml local.yml
@@ -77,7 +76,7 @@ pywis-pubsub subscribe --config local.yml --bbox=-142,42,-52,84
 pywis-pubsub subscribe --config local.yml --bbox=-142,42,-52,84 --verbosity=DEBUG
 ```
 
-### publishing
+### Publishing
 
 ```bash
 cp pub-config-example.yml pub-local.yml
@@ -86,9 +85,9 @@ vim pub-local.yml # update accordingly to configure publish-options
 # example publishing a WIS2-message with attributes: 
 # unique-id=stationXYZ-20221111085500 
 # data-url=http://www.meteo.xx/stationXYZ-20221111085500.bufr4 
-# lon,lat=33.8,11.8
-# wigos-id=0-20000-12345
-pywis-pubsub publish --config pub-local.yml -i stationXYZ-20221111085500 -u http://www.meteo.xx/stationXYZ-20221111085500.bufr4 -g 33.8,-11.8 -w 0-20000-12345
+# lon,lat,elevation=33.8,11.8,112
+# wigos_station_identifier=0-20000-12345
+pywis-pubsub publish --config pub-local.yml -i stationXYZ-20221111085500 -u http://www.meteo.xx/stationXYZ-20221111085500.bufr4 -g 33.8,-11.8,8.112 -w 0-20000-12345
 ```
 
 ### Using the API
@@ -125,7 +124,7 @@ message = prepare_message(
         content_type='application/x-bufr',
         url='http://www.meteo.xx/stationXYZ-20221111085500.bufr4', 
         identifier='stationXYZ-20221111085500', 
-        geometry=[33.8,-11.8],
+        geometry=[33.8, -11.8, 123],
         wigos_station_identifier='0-20000-12345'
 )
 

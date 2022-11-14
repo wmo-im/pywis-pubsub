@@ -1,0 +1,8 @@
+# RFC1738 URL
+broker: mqtt://localhost:1883
+
+# topic to publish on
+topic: origin/a/wis2/mwi/malawi_wmo_demo/data/core/weather/surface-based-observations/synop
+
+# application-type of file being published
+content_type: application/x-bufr
