@@ -41,17 +41,6 @@ class SecureHashAlgorithms(Enum):
     MD5 = 'md5'
 
 
-MIMETYPES = [
-    'text/plain',
-    'text/csv',
-    'application/octet-stream',
-    'application/text',
-    'application/json',
-    'application/x-bufr',
-    'application/x-grib2'
-    ]
-
-
 def generate_checksum(bytes, algorithm: SecureHashAlgorithms) -> str:  # noqa
     """
     Generate a checksum of message file
@@ -67,7 +56,13 @@ def generate_checksum(bytes, algorithm: SecureHashAlgorithms) -> str:  # noqa
 
 
 def get_file_info(public_data_url):
-    """ get filename, length and calculate checksum from public-file-url """
+    """
+    get filename, length and calculate checksum from public-file-url
+
+    :param public_data_url: `str` defining publicly accessible data-url
+
+    :returns: dict
+    """
     res = requests.get(public_data_url)
     # raise HTTPError, if on occurred:
     res.raise_for_status()
@@ -80,8 +75,18 @@ def get_file_info(public_data_url):
         'size': len(filebytes)
     }
 
-def prepare_message(topic, application_type, url, unique_id, geometry=[], wigos_id=None) -> dict: # noqa
-    """ prepare WIS2-compliant message """
+def prepare_message(topic, content_type, url, identifier, geometry=[], wigos_station_identifier=None) -> dict: # noqa
+    """
+    prepare WIS2-compliant message
+
+    :param topic: `str` of topic
+    :url: `str` of url pointing to data
+    :identifier: `str` of unique-id to help global broker deduplicate data
+    :geometry: array defining lon,lat and/or lon,lat/altitude
+    :wigos_station_identifier: `str` of WSI for station as used in OSCAR
+
+    :returns: dict
+    """
 
     publish_datetime = datetime.utcnow().strftime(
             '%Y-%m-%dT%H:%M:%SZ'
@@ -95,7 +100,7 @@ def prepare_message(topic, application_type, url, unique_id, geometry=[], wigos_
         "coordinates": latlon
     }
     message = {
-            'id': unique_id,
+            'id': identifier,
             'type': 'Feature',
             'version': 'v04',
             'geometry': geometry,
@@ -109,13 +114,13 @@ def prepare_message(topic, application_type, url, unique_id, geometry=[], wigos_
             },
             'links': [{
                 'rel': 'canonical',
-                'type': application_type,
+                'type': content_type,
                 'href': url,
                 'length': file_info['size']
             }]
     }
-    if wigos_id is not None:
-        message['properties']['wigos_station_identifier'] = wigos_id  # noqa
+    if wigos_station_identifier is not None:
+        message['properties']['wigos_station_identifier'] = wigos_station_identifier  # noqa
     return message
 
 
@@ -124,10 +129,10 @@ def prepare_message(topic, application_type, url, unique_id, geometry=[], wigos_
 @cli_options.OPTION_CONFIG
 @cli_options.OPTION_VERBOSITY
 @click.option('--url', '-u', help='url pointing to data-file')
-@click.option('--unique_id', '-i', help='unique file-id')
+@click.option('--identifier', '-i', help='unique file-id')
 @click.option('--geometry', '-g', help='geometry as lat,lon for example -g 34.07,-14.4 ') # noqa
-@click.option('--wigos_id', '-w', help='optional wigos-id')
-def publish(ctx, config, url, unique_id, geometry=[], wigos_id=None, verbosity='NOTSET'): # noqa
+@click.option('--wigos_station_identifier', '-w', help='optional wigos-id')
+def publish(ctx, config, url, identifier, geometry=[], wigos_station_identifier=None, verbosity='NOTSET'): # noqa
     """ Publish a WIS2-message for a given url and a set of coordinates """
 
     if config is None:
@@ -135,20 +140,16 @@ def publish(ctx, config, url, unique_id, geometry=[], wigos_id=None, verbosity='
     config = util.yaml_load(config)
 
     broker = config.get('broker')
-    topic = config.get('topic', [])
-    application_type = config.get('application_type', [])
-    if application_type not in MIMETYPES:
-        click.echo(f"application_type={application_type} is invalid")
-        click.echo(f"options are: {MIMETYPES}")
-        return
+    topic = config.get('topic')
+    content_type = config.get('content_type')
 
     message = prepare_message(
         topic=topic,
-        application_type=application_type,
+        content_type=content_type,
         url=url,
-        unique_id=unique_id,
+        identifier=identifier,
         geometry=geometry,
-        wigos_id=wigos_id
+        wigos_station_identifier=wigos_station_identifier
     )
 
     client = MQTTPubSubClient(broker)

@@ -122,11 +122,11 @@ from pywis_pubsub.publish import prepare_message
 
 message = prepare_message(
         topic='foo/bar',
-        application_type='application/x-bufr',
+        content_type='application/x-bufr',
         url='http://www.meteo.xx/stationXYZ-20221111085500.bufr4', 
-        unique_id='stationXYZ-20221111085500', 
+        identifier='stationXYZ-20221111085500', 
         geometry=[33.8,-11.8],
-        wigos_id='0-20000-12345'
+        wigos_station_identifier='0-20000-12345'
 )
 
 m = MQTTPubSubClient('mqtt://localhost:1883')
