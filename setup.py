@@ -23,7 +23,6 @@ from pathlib import Path
 import re
 from setuptools import Command, find_packages, setup
 import sys
-from urllib.request import urlopen
 
 
 class PyTest(Command):
@@ -69,21 +68,6 @@ MANIFEST = Path('MANIFEST')
 
 if MANIFEST.exists():
     MANIFEST.unlink()
-
-print('Caching notification message schema')
-
-MESSAGE_SCHEMA_URL = 'https://raw.githubusercontent.com/wmo-im/wis2-notification-message/main/WIS2_Message_Format_Schema.yaml'  # noqa
-
-USERDIR = Path.home() / '.pywis-pubsub'
-MESSAGE_SCHEMA = USERDIR / 'wis2-notification-message' / 'WIS2_Message_Format_Schema.yaml'  # noqa
-
-
-if not MESSAGE_SCHEMA.parent.exists():
-    print('Downloading message schema')
-    MESSAGE_SCHEMA.parent.mkdir(parents=True, exist_ok=True)
-
-    with MESSAGE_SCHEMA.open('wb') as fh:
-        fh.write(urlopen(MESSAGE_SCHEMA_URL).read())
 
 
 setup(

@@ -24,7 +24,8 @@ from typing import Tuple
 
 from jsonschema import validate
 
-from pywis_pubsub.util import MESSAGE_SCHEMA, yaml_load
+from pywis_pubsub.schema import MESSAGE_SCHEMA
+from pywis_pubsub.util import yaml_load
 
 LOGGER = logging.getLogger(__name__)
 
@@ -41,6 +42,11 @@ def validate_message(instance: dict) -> Tuple[bool, str]:
 
     success = False
     error_message = None
+
+    if not MESSAGE_SCHEMA.exists():
+        msg = 'Schema not found. Please run pywis-pubsub schema sync'
+        LOGGER.error(msg)
+        raise RuntimeError(msg)
 
     with open(MESSAGE_SCHEMA) as fh:
         schema = yaml_load(fh)
