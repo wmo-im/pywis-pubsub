@@ -155,5 +155,3 @@ def get_userdir() -> str:
     """
 
     return Path.home() / '.pywis-pubsub'
-
-MESSAGE_SCHEMA = get_userdir() / 'wis2-notification-message' / 'WIS2_Message_Format_Schema.yaml'  # noqa

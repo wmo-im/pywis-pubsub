@@ -19,12 +19,13 @@
 #
 ###############################################################################
 
-__version__ = '0.0.1'
+__version__ = '0.1.1'
 
 import click
 
 from pywis_pubsub.subscribe import subscribe
 from pywis_pubsub.publish import publish
+from pywis_pubsub.schema import schema
 
 
 @click.group()
@@ -37,5 +38,6 @@ def cli():
     pass
 
 
+cli.add_command(schema)
 cli.add_command(subscribe)
 cli.add_command(publish)

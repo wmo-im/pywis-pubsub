@@ -24,7 +24,8 @@ from typing import Tuple
 
 from jsonschema import validate
 
-from pywis_pubsub.util import MESSAGE_SCHEMA, yaml_load
+from pywis_pubsub.schema import MESSAGE_SCHEMA
+from pywis_pubsub.util import yaml_load
 
 from urllib.request import urlopen
 
@@ -42,13 +43,10 @@ def validate_message(instance: dict) -> Tuple[bool, str]:
     success = False
     error_message = None
 
-    # cache the message-schema the first time validate_message is called
-    if not MESSAGE_SCHEMA.parent.exists():
-        MESSAGE_SCHEMA_URL = 'https://raw.githubusercontent.com/wmo-im/wis2-notification-message/main/WIS2_Message_Format_Schema.yaml'  # noqa
-        print('Caching notification message schema')
-        MESSAGE_SCHEMA.parent.mkdir(parents=True, exist_ok=True)
-        with MESSAGE_SCHEMA.open('wb') as fh:
-            fh.write(urlopen(MESSAGE_SCHEMA_URL).read())
+    if not MESSAGE_SCHEMA.exists():
+        msg = 'Schema not found. Please run pywis-pubsub schema sync'
+        LOGGER.error(msg)
+        raise RuntimeError(msg)
 
     with open(MESSAGE_SCHEMA) as fh:
         schema = yaml_load(fh)
