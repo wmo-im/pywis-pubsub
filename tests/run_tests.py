@@ -19,8 +19,11 @@
 #
 ###############################################################################
 
+import json
 import os
 import unittest
+
+from pywis_pubsub.validation import validate_message
 
 TESTDATA_DIR = os.path.dirname(os.path.realpath(__file__))
 
@@ -46,10 +49,23 @@ class PyWISPubSubTest(unittest.TestCase):
         """return to pristine state"""
         pass
 
-    def test_smoke(self):
-        """Simple Smoke Test"""
-        # test assertions go here
-        self.assertEquals(1, 1, 'Expected equality')
+    def test_validation(self):
+        """Test validation"""
+
+        with open(get_abspath('test_valid.json')) as fh:
+            data = json.load(fh)
+            is_valid, errors = validate_message(data)
+            self.assertTrue(is_valid)
+
+        with open(get_abspath('test_invalid.json')) as fh:
+            data = json.load(fh)
+            is_valid, errors = validate_message(data)
+            self.assertFalse(is_valid)
+
+        with open(get_abspath('test_malformed.json')) as fh:
+            with self.assertRaises(json.decoder.JSONDecodeError):
+                data = json.load(fh)
+                is_valid, errors = validate_message(data)
 
 
 if __name__ == '__main__':

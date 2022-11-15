@@ -26,6 +26,7 @@ import click
 from pywis_pubsub.publish import publish
 from pywis_pubsub.schema import schema
 from pywis_pubsub.subscribe import subscribe
+from pywis_pubsub.validation import message
 
 
 @click.group()
@@ -38,6 +39,7 @@ def cli():
     pass
 
 
+cli.add_command(message)
 cli.add_command(publish)
 cli.add_command(schema)
 cli.add_command(subscribe)
