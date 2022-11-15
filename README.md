@@ -74,6 +74,9 @@ pywis-pubsub subscribe --config local.yml --bbox=-142,42,-52,84
 
 # subscribe, and filter messages by geometry, increase debugging verbosity
 pywis-pubsub subscribe --config local.yml --bbox=-142,42,-52,84 --verbosity=DEBUG
+
+# validate a message
+pywis-pubsub message validate /path/to/message1.json
 ```
 
 ### Publishing
@@ -117,9 +120,9 @@ m.sub(topics)
 ```python
 # publish example
 from pywis_pubsub.mqtt import MQTTPubSubClient
-from pywis_pubsub.publish import prepare_message
+from pywis_pubsub.publish import create_message
 
-message = prepare_message(
+message = create_message(
         topic='foo/bar',
         content_type='application/x-bufr',
         url='http://www.meteo.xx/stationXYZ-20221111085500.bufr4', 

@@ -19,15 +19,24 @@
 #
 ###############################################################################
 
+import json
 import logging
 from typing import Tuple
 
+import click
 from jsonschema import validate
 
+from pywis_pubsub import cli_options
 from pywis_pubsub.schema import MESSAGE_SCHEMA
 from pywis_pubsub.util import yaml_load
 
 LOGGER = logging.getLogger(__name__)
+
+
+@click.group()
+def message():
+    """Message utilities"""
+    pass
 
 
 def validate_message(instance: dict) -> Tuple[bool, str]:
@@ -58,3 +67,26 @@ def validate_message(instance: dict) -> Tuple[bool, str]:
         error_message = repr(err)
 
     return (success, error_message)
+
+
+@click.command('validate')
+@click.pass_context
+@click.argument('message', type=click.File())
+@cli_options.OPTION_VERBOSITY
+def validate_(ctx, message, verbosity):
+    """Validate a message"""
+
+    try:
+        message_dict = json.load(message)
+    except json.decoder.JSONDecodeError as err:
+        raise click.ClickException(f'Malformed message: {err}')
+
+    is_valid, errors = validate_message(message_dict)
+
+    if not is_valid:
+        raise click.ClickException(f'Invalid message: {errors}')
+    else:
+        click.echo('Valid message')
+
+
+message.add_command(validate_)

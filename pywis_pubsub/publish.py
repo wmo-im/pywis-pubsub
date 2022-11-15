@@ -79,10 +79,10 @@ def get_file_info(public_data_url: str) -> dict:
     }
 
 
-def prepare_message(topic: str, content_type: str, url: str, identifier: str,
-                    geometry = [], wigos_station_identifier: str = None) -> dict:  # noqa
+def create_message(topic: str, content_type: str, url: str, identifier: str,
+                   geometry = [], wigos_station_identifier: str = None) -> dict:  # noqa
     """
-    prepare WIS2-compliant message
+    Create WIS2 compliant message
 
     :param topic: `str` of topic
     :url: `str` of url pointing to data
@@ -155,7 +155,7 @@ def publish(ctx, config, url, identifier, geometry=[],
     topic = config.get('topic')
     content_type = config.get('content_type')
 
-    message = prepare_message(
+    message = create_message(
         topic=topic,
         content_type=content_type,
         url=url,
