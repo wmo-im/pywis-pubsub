@@ -1,7 +1,7 @@
 boto3
-click==8.1.2
-paho-mqtt==1.6.1
-pyyaml
-shapely
+click
 jsonschema
+paho-mqtt
+pyyaml
 requests
+shapely

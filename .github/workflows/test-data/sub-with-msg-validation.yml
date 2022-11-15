@@ -4,7 +4,7 @@ broker: mqtt://localhost:1883
 
 # list of topics to subscribe to
 topics:
-    - 'origin/a/wis2/mwi/malawi_wmo_demo/data/core/weather/surface-based-observations/synop'
+    - origin/a/wis2/mwi/malawi_wmo_demo/data/core/weather/surface-based-observations/synop
 
 # whether to verify data
 verify_data: true
@@ -16,4 +16,4 @@ validate_message: true
 storage:
     type: fs
     options:
-        path: test-data/
+        path: .github/workflows/test-data/

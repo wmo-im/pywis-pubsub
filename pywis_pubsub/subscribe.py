@@ -32,9 +32,9 @@ import click
 from pywis_pubsub import cli_options
 from pywis_pubsub import util
 from pywis_pubsub.geometry import is_message_within_bbox
+from pywis_pubsub.mqtt import MQTTPubSubClient
 from pywis_pubsub.storage import STORAGES
 from pywis_pubsub.validation import validate_message
-from pywis_pubsub.mqtt import MQTTPubSubClient
 
 
 LOGGER = logging.getLogger(__name__)
@@ -75,11 +75,9 @@ def get_data(msg_dict: dict) -> bytes:
     if canonical_link:
         LOGGER.debug(f'Found canonical link: {canonical_link}')
 
-    props = msg_dict['properties']
-
-    if 'content' in props and 'value' in props['content']:
+    if 'content' in msg_dict and 'value' in msg_dict['content']:
         LOGGER.debug('Decoding from inline data')
-        data = base64.b64decode(props['content']['value'])
+        data = base64.b64decode(msg_dict['content']['value'])
     else:
         LOGGER.debug(f"Downloading from {canonical_link['href']}")
         try:
