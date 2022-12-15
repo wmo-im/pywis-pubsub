@@ -4,4 +4,4 @@ jsonschema
 paho-mqtt
 pyyaml
 requests
-shapely
+shapely<2
