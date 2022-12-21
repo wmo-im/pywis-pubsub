@@ -71,8 +71,14 @@ class S3(Storage):
 
         s3_url = self.options['url']
         s3_bucket = self.options['bucket']
+        s3_key_id = self.options['key_id']
+        s3_secret_key = self.options['s3_secret_key']
 
-        s3_client = boto3.client('s3', endpoint_url=s3_url)
+        s3_session = boto3.Session(
+                aws_access_key_id=s3_key_id,
+                aws_secret_access_key=s3_secret_key
+        )
+        s3_client = s3_session.client('s3', endpoint_url=s3_url)
 
         try:
             s3_client.put_object(data, s3_bucket, filename)

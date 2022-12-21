@@ -24,6 +24,8 @@ storage:
 #    options:
 #        url: http://localhost:9001
 #        bucket: some-bucket
+#        key_id: key-id-or-username
+#        secret_key: secret-key-or-password
 
 # added for mqp-subscriber
 wis2box: true
