@@ -19,7 +19,7 @@
 #
 ###############################################################################
 
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 
 import click
 
@@ -32,10 +32,8 @@ from pywis_pubsub.validation import message
 @click.group()
 @click.version_option(version=__version__)
 def cli():
-    """WIS 2.0 Publish/Subscribe/Download utility
-    Subscribe and download data from the WIS2 network
-    Publish data notifications to the WIS2 network
-    """
+    """WIS2 Publish/Subscribe/Download utility"""
+
     pass
 
 
