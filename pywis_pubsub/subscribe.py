@@ -32,6 +32,7 @@ import click
 from pywis_pubsub import cli_options
 from pywis_pubsub import util
 from pywis_pubsub.geometry import is_message_within_bbox
+from pywis_pubsub.hook import load_hook
 from pywis_pubsub.mqtt import MQTTPubSubClient
 from pywis_pubsub.storage import STORAGES
 from pywis_pubsub.validation import validate_message
@@ -174,6 +175,16 @@ def on_message_handler(client, userdata, msg):
         storage_object = storage_class(userdata['storage'])
         storage_object.save(data, filename)
 
+    if userdata.get('hook') is not None:
+        LOGGER.debug(f"Hook detected: {userdata['hook']}")
+        try:
+            hook = load_hook(userdata['hook'])
+            LOGGER.debug('Executing hook')
+            hook.execute(msg_dict)
+        except Exception as err:
+            msg = f'Hook failed: {err}'
+            LOGGER.error(msg, exc_info=True)
+
 
 @click.command()
 @click.pass_context
@@ -185,12 +196,13 @@ def subscribe(ctx, config, download, bbox=[], verbosity='NOTSET'):
     """Subscribe to a broker/topic and optionally download data"""
 
     if config is None:
-        raise click.ClickException('missing --config/-c')
+        raise click.ClickException('missing --config')
     config = util.yaml_load(config)
 
     broker = config.get('broker')
     qos = int(config.get('qos', 1))
     topics = config.get('topics', [])
+
     options = {}
 
     if bbox:
@@ -201,6 +213,7 @@ def subscribe(ctx, config, download, bbox=[], verbosity='NOTSET'):
 
     options['verify_data'] = config.get('verify_data', True)
     options['validate_message'] = config.get('validate_message', False)
+    options['hook'] = config.get('hook')
 
     client = MQTTPubSubClient(broker, options)
     client.bind('on_message', on_message_handler)
