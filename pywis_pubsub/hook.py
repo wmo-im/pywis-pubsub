@@ -19,32 +19,50 @@
 #
 ###############################################################################
 
+from abc import ABC, abstractmethod
+import importlib
 import logging
-import sys
 
-import click
-
-OPTION_CONFIG = click.option(
-    '--config', '-c',
-    type=click.File('rb', encoding='utf-8'),
-    help='Name of configuration file')
+LOGGER = logging.getLogger(__name__)
 
 
-def OPTION_VERBOSITY(f):
-    logging_options = ['ERROR', 'WARNING', 'INFO', 'DEBUG']
+class Hook(ABC):
+    # @abstractmethod
+    def __init__(self):
+        pass
 
-    def callback(ctx, param, value):
-        if value is not None:
-            logging.basicConfig(stream=sys.stdout,
-                                level=getattr(logging, value))
-        return True
+    @abstractmethod
+    def execute(self, msg_dict: dict) -> None:
+        """
+        Execute a hook
 
-    return click.option('--verbosity', '-v',
-                        type=click.Choice(logging_options),
-                        help='Verbosity',
-                        callback=callback)(f)
+        :param payload: `dict` of message payload
+
+        :returns: `None`
+        """
+
+        raise NotImplementedError()
 
 
-def cli_callbacks(f):
-    f = OPTION_VERBOSITY(f)
-    return f
+class TestHook(Hook):
+    def execute(self, msg_dict: dict) -> None:
+        LOGGER.debug(f"Hi from test hook!  Message id: {msg_dict['id']}")
+
+
+def load_hook(factory) -> Hook:
+    """
+    Load hook plugin
+
+    :param factory: dotted path of Python module/class
+
+    :returns: hook object
+    """
+
+    modulename, classname = factory.rsplit('.', 1)
+
+    LOGGER.debug(f'module name: {modulename}')
+    LOGGER.debug(f'class name: {classname}')
+
+    module = importlib.import_module(modulename)
+
+    return getattr(module, classname)()

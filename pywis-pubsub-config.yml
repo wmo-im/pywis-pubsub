@@ -25,6 +25,15 @@ storage:
 #        url: http://localhost:9001
 #        bucket: some-bucket
 
+# advanced functionality: add your own code/workflow/trigger
+#
+# hook: # trigger that implements pywis-pubsub Hook (pywis_pubsub.hook.Hook)
+#
+# test hook available from pywis_pubsub.hook.TestHook
+#hook: pywis_pubsub.hook.TestHook
+
+
+
 # added for mqp-subscriber
 wis2box: true
 
