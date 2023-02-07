@@ -1,0 +1,8 @@
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Source: https://github.com/wmo-im/pywis-pubsub
+
+Files: *
+Copyright: Copyright 2023 Tom Kralidis
+License: Apache-2.0
+  On Debian systems, the complete text of Apache License 2.0 can be
+  found in "/usr/share/common-licenses/Apache-2.0".

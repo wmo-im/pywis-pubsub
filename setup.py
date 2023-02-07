@@ -62,7 +62,7 @@ def get_package_version():
 
 LONG_DESCRIPTION = read('README.md')
 
-DESCRIPTION = 'pywis-pubsub provides subscription and download capability of WMO data from WIS 2.0 infrastructure services'  # noqa
+DESCRIPTION = 'pywis-pubsub provides subscription and download capability of WMO data from WIS2 infrastructure services'  # noqa
 
 MANIFEST = Path('MANIFEST')
 
@@ -79,7 +79,7 @@ setup(
     license='MIT',
     platforms='all',
     keywords=' '.join([
-        'WIS 2.0',
+        'WIS2',
         'PubSub',
         'broker',
         'topic'

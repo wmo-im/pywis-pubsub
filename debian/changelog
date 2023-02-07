@@ -1,0 +1,5 @@
+pywis-pubsub (0.1.0) focal; urgency=medium
+
+  * initial Debian packaging
+
+ -- Tom Kralidis <tomkralidis@gmail.com>  Tue, 07 Feb 2023 11:46:03 +0000
