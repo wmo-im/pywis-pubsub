@@ -1,0 +1,26 @@
+Source: pywis-pubsub
+Section: python
+Priority: optional
+Maintainer: Tom Kralidis <tomkralidis@gmail.com>
+Build-Depends: debhelper (>= 9),
+               dh-python,
+               python3-all,
+               python3-setuptools
+Standards-Version: 4.3.0
+Vcs-Git: https://github.com/wmo-im/pywis-pubsub.git
+Homepage: https://github.com/wmo-im/pywis-pubsub
+
+Package: pywis-pubsub
+Architecture: all
+Depends: ${python3:Depends},
+         python3-click,
+         python3-jsonschema,
+         python3-paho-mqtt,
+         python3-requests,
+         python3-shapely,
+         python3-yaml,
+         ${misc:Depends}
+Suggests: python3-boto3
+Description: Python package for WMO WIS2 Pub/Sub workflows.
+ pywis-pubsub provides subscription and download capability of WMO data
+ from WIS2 infrastructure services.

@@ -5,7 +5,7 @@
 
 ## Overview
 
-pywis-pubsub provides subscription and download capability of WMO data from WIS 2.0
+pywis-pubsub provides subscription and download capability of WMO data from WIS2
 infrastructure services.
 
 ## Installation
@@ -55,7 +55,7 @@ pywis-pubsub --version
 ### Subscribing
 
 ```bash
-cp pywis-pubsub-config-example.yml local.yml
+cp pywis-pubsub-config.yml local.yml
 vim local.yml # update accordingly to configure subscribe-options
 
 pywis-pubsub --version
