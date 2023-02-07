@@ -25,9 +25,10 @@ import hashlib
 import json
 import logging
 from pathlib import Path
-import urllib
 
 import click
+from requests import Session
+from requests.adapters import HTTPAdapter, Retry
 
 from pywis_pubsub import cli_options
 from pywis_pubsub import util
@@ -81,10 +82,10 @@ def get_data(msg_dict: dict) -> bytes:
         data = base64.b64decode(msg_dict['content']['value'])
     else:
         LOGGER.debug(f"Downloading from {canonical_link['href']}")
+        http_session = get_http_session()
         try:
-            with urllib.request.urlopen(canonical_link['href']) as f:
-                data = f.read()
-        except urllib.error.HTTPError as err:
+            data = http_session.get(canonical_link['href']).content
+        except Exception as err:
             LOGGER.error(f"download error ({canonical_link['href']}): {err}")
             raise
 
@@ -110,6 +111,27 @@ def data_verified(data: bytes, size: int, method: VerificationMethods,
 
     LOGGER.debug('Comparing checksum and data size')
     return data_value == value and len(data) == size
+
+
+def get_http_session():
+    """
+    Get HTTP session
+
+    :returns: `requests.Session`
+    """
+
+    s = Session()
+    retries = Retry(
+        total=3,
+        status_forcelist=[429, 500, 502, 503, 504],
+        backoff_factor=2
+    )
+
+    adapter = HTTPAdapter(max_retries=retries)
+    s.mount('https://', adapter)
+    s.mount('http://', adapter)
+
+    return s
 
 
 def on_message_handler(client, userdata, msg):
