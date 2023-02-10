@@ -24,6 +24,7 @@ from enum import Enum
 import hashlib
 import json
 import logging
+import mimetypes
 
 import click
 import requests
@@ -108,6 +109,15 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
         }
     else:
         geometry2 = None
+
+    if content_type is None:
+        content_type2 = mimetypes.guess_type(url)[0]
+        if content_type2 is None:
+            LOGGER.warning('Unknown content type')
+            content_type2 = 'application/octet-stream'
+    else:
+        content_type2 = content_type
+
     message = {
             'id': identifier,
             'type': 'Feature',
@@ -123,7 +133,7 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
             },
             'links': [{
                 'rel': 'canonical',
-                'type': content_type,
+                'type': content_type2,
                 'href': url,
                 'length': file_info['size']
             }]
@@ -155,7 +165,7 @@ def publish(ctx, config, url, identifier, geometry=[],
 
     broker = config.get('broker')
     topic = config.get('topic')
-    content_type = config.get('content_type', 'application/octet-stream')
+    content_type = config.get('content_type')
 
     message = create_message(
         topic=topic,
