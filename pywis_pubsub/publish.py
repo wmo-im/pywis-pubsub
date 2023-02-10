@@ -100,17 +100,19 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
     # raises HTTPError if file can not be accessed
     file_info = get_file_info(url)
 
-    point = [float(i) for i in geometry.split(',')]
-
-    geometry = {
-        'type': 'Point',
-        'coordinates': point
-    }
+    if geometry:
+        point = [float(i) for i in geometry.split(',')]
+        geometry2 = {
+            'type': 'Point',
+            'coordinates': point
+        }
+    else:
+        geometry2 = None
     message = {
             'id': identifier,
             'type': 'Feature',
             'version': 'v04',
-            'geometry': geometry,
+            'geometry': geometry2,
             'properties': {
                 'data_id': f"{topic}/{file_info['filename']}",
                 'pubtime': publish_datetime,
@@ -136,8 +138,8 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
 @click.pass_context
 @cli_options.OPTION_CONFIG
 @cli_options.OPTION_VERBOSITY
-@click.option('--url', '-u', help='url pointing to data-file')
-@click.option('--identifier', '-i', help='unique file-id')
+@click.option('--url', '-u', help='url of data')
+@click.option('--identifier', '-i', help='unique file identifier')
 @click.option('--geometry', '-g',
               help='point geometry as longitude,latitude,elevation (elevation is optional)')  # noqa
 @click.option('--wigos_station_identifier', '-w',
@@ -146,14 +148,14 @@ def publish(ctx, config, url, identifier, geometry=[],
             wigos_station_identifier=None, verbosity='NOTSET'):
     """Publish a WIS2-message for a given url and a set of coordinates"""
 
-    if config is None:
-        raise click.ClickException('missing --config/-c')
+    if None in [config, url, identifier]:
+        raise click.ClickException('missing required arguments')
 
     config = util.yaml_load(config)
 
     broker = config.get('broker')
     topic = config.get('topic')
-    content_type = config.get('content_type')
+    content_type = config.get('content_type', 'application/octet-stream')
 
     message = create_message(
         topic=topic,
