@@ -137,8 +137,10 @@ def get_http_session():
 def on_message_handler(client, userdata, msg):
     """message handler"""
 
+    LOGGER.debug(f'Topic: {msg.topic}')
+    LOGGER.debug(f'Message:\n{msg.payload}')
+
     msg_dict = json.loads(msg.payload)
-    msg_json = json.dumps(msg_dict, indent=4)
 
     try:
         if userdata.get('validate_message', False):
@@ -150,9 +152,6 @@ def on_message_handler(client, userdata, msg):
     except RuntimeError as err:
         LOGGER.error(f'Cannot validate message: {err}')
         return
-
-    LOGGER.debug(f'Topic: {msg.topic}')
-    LOGGER.debug(f'Raw message:\n{msg_json}')
 
     if userdata.get('bbox') and msg_dict.get('geometry') is not None:
         LOGGER.debug('Performing spatial filtering')
