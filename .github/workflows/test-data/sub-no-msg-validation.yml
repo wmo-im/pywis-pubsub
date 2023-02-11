@@ -3,7 +3,7 @@
 broker: mqtt://localhost:1883
 
 # list of topics to subscribe to
-topics:
+subscribe_topics:
     - origin/a/wis2/mwi/malawi_wmo_demo/data/core/weather/surface-based-observations/synop
 
 # whether to verify data
