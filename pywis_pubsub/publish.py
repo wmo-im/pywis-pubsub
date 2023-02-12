@@ -150,13 +150,14 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
 @cli_options.OPTION_VERBOSITY
 @click.option('--url', '-u', help='url of data')
 @click.option('--identifier', '-i', help='unique file identifier')
+@click.option('--topic', '-t', help='topic to publish to')
 @click.option('--geometry', '-g',
               help='point geometry as longitude,latitude,elevation (elevation is optional)')  # noqa
 @click.option('--wigos_station_identifier', '-w',
               help='WIGOS station identifier')
-def publish(ctx, config, url, identifier, geometry=[],
+def publish(ctx, config, url, topic, identifier, geometry=[],
             wigos_station_identifier=None, verbosity='NOTSET'):
-    """Publish a WIS2-message for a given url and a set of coordinates"""
+    """Publish a WIS2 Notification Message"""
 
     if None in [config, url, identifier]:
         raise click.ClickException('missing required arguments')
@@ -164,12 +165,15 @@ def publish(ctx, config, url, identifier, geometry=[],
     config = util.yaml_load(config)
 
     broker = config.get('broker')
-    topic = config.get('topic')
-    content_type = config.get('content_type')
+
+    if topic is None:
+        topic2 = config.get('publish_topic')
+    else:
+        topic2 = topic
 
     message = create_message(
-        topic=topic,
-        content_type=content_type,
+        topic=topic2,
+        content_type=config.get('content_type'),
         url=url,
         identifier=identifier,
         geometry=geometry,
@@ -178,5 +182,5 @@ def publish(ctx, config, url, identifier, geometry=[],
 
     client = MQTTPubSubClient(broker)
     click.echo(f'Connected to broker {client.broker_safe_url}')
-    click.echo(f'Publish new message to topic={topic}')
-    client.pub(topic, json.dumps(message))
+    click.echo(f'Publishing message to topic={topic2}')
+    client.pub(topic2, json.dumps(message))

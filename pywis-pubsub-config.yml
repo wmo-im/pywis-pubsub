@@ -3,8 +3,11 @@
 broker: mqtts://localhost:1883
 
 # list of topics to subscribe to
-topics:
+subscribe_topics:
     - '#'
+
+# topic to publish to
+publish_topic: foo/bar
 
 # whether to verify data
 verify_data: true

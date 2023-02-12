@@ -222,7 +222,7 @@ def subscribe(ctx, config, download, bbox=[], verbosity='NOTSET'):
 
     broker = config.get('broker')
     qos = int(config.get('qos', 1))
-    topics = config.get('topics', [])
+    subscribe_topics = config.get('subscribe_topics', [])
 
     options = {}
 
@@ -239,5 +239,5 @@ def subscribe(ctx, config, download, bbox=[], verbosity='NOTSET'):
     client = MQTTPubSubClient(broker, options)
     client.bind('on_message', on_message_handler)
     click.echo(f'Connected to broker {client.broker_safe_url}')
-    click.echo(f'Subscribing to topics {topics}')
-    client.sub(topics, qos)
+    click.echo(f'Subscribing to subscribe_topics {subscribe_topics}')
+    client.sub(subscribe_topics, qos)
