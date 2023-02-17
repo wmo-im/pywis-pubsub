@@ -43,19 +43,22 @@ class SecureHashAlgorithms(Enum):
     MD5 = 'md5'
 
 
-def generate_checksum(bytes: int, algorithm: SecureHashAlgorithms) -> str:
+def generate_checksum(data: bytes, algorithm: SecureHashAlgorithms) -> str:
     """
     Generate a checksum of message file
 
+    :param data: bytes of data
     :param algorithm: secure hash algorithm (md5, sha512)
 
     :returns: hexdigest
     """
 
     sh = getattr(hashlib, algorithm)()
-    sh.update(bytes)
+    sh.update(data)
 
-    return sh.hexdigest()
+    hexdigest = sh.hexdigest()
+    LOGGER.debug(f'Hex digest: {hexdigest}')
+    return hexdigest
 
 
 def get_file_info(public_data_url: str) -> dict:

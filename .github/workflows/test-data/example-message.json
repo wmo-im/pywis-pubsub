@@ -1,0 +1,29 @@
+{
+    "id": "WIGOS_0-454-2-AWSCHIKANGAWA_20221109T135500",
+    "type": "Feature",
+    "version": "v04",
+    "geometry": {
+        "type": "Point",
+        "coordinates": [
+            33.8025,
+            -11.8415
+        ]
+    },
+    "properties": {
+        "data_id": "origin/a/wis2/mwi/malawi_wmo_demo/data/core/weather/surface-based-observations/synop/WIGOS_0-454-2-AWSCHIKANGAWA_20221109T135500.bufr4",
+        "pubtime": "2023-02-17T12:35:27Z",
+        "integrity": {
+            "method": "sha512",
+            "value": "28f82be2b103f5278b02ae512f3484836bb356082322e203e72b9412e0e302eb77201d6750c5a3bebe24d12de227c5bb7779b16693a66fa724dc52dd494f33c7"
+        },
+        "wigos_station_identifier": "0-454-2-AWSCHIKANGAWA"
+    },
+    "links": [
+        {
+            "rel": "canonical",
+            "type": "application/x-bufr",
+            "href": "https://pywis-pubsub-test.s3.eu-central-1.amazonaws.com/WIGOS_0-454-2-AWSCHIKANGAWA_20221109T135500.bufr4",
+            "length": 247
+        }
+    ]
+}
