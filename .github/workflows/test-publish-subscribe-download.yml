@@ -40,3 +40,11 @@ jobs:
           pywis-pubsub publish --config .github/workflows/test-data/pub-config.yml --verbosity=DEBUG -i WIGOS_0-454-2-AWSCHIKANGAWA_20221109T135500 -u https://pywis-pubsub-test.s3.eu-central-1.amazonaws.com/WIGOS_0-454-2-AWSCHIKANGAWA_20221109T135500.bufr4 -g 33.8025,-11.8415 -w 0-454-2-AWSCHIKANGAWA
           sleep 1
           ls -lh .github/workflows/test-data/WIGOS_0-454-2-AWSCHIKANGAWA_20221109T135500.bufr4
+      - name: subscribe, publish and download with file-based publication
+        run: |
+          rm -rf .github/workflows/test-data/*.bufr4
+          pywis-pubsub subscribe --config .github/workflows/test-data/sub-with-msg-validation.yml --download &
+          sleep 1
+          pywis-pubsub publish --config .github/workflows/test-data/pub-config.yml --verbosity=DEBUG --file .github/workflows/test-data/example-message.json
+          sleep 1
+          ls -lh .github/workflows/test-data/WIGOS_0-454-2-AWSCHIKANGAWA_20221109T135500.bufr4
