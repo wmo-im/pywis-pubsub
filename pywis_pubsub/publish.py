@@ -32,6 +32,7 @@ import requests
 from pywis_pubsub import cli_options
 from pywis_pubsub import util
 from pywis_pubsub.mqtt import MQTTPubSubClient
+from pywis_pubsub.validation import validate_
 
 
 LOGGER = logging.getLogger(__name__)
@@ -148,6 +149,7 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
 @click.pass_context
 @cli_options.OPTION_CONFIG
 @cli_options.OPTION_VERBOSITY
+@click.option('--file', '-f', 'file_', type=click.File(), help='url of data')
 @click.option('--url', '-u', help='url of data')
 @click.option('--identifier', '-i', help='unique file identifier')
 @click.option('--topic', '-t', help='topic to publish to')
@@ -155,11 +157,14 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
               help='point geometry as longitude,latitude,elevation (elevation is optional)')  # noqa
 @click.option('--wigos_station_identifier', '-w',
               help='WIGOS station identifier')
-def publish(ctx, config, url, topic, identifier, geometry=[],
+def publish(ctx, file_, config, url, topic, identifier, geometry=[],
             wigos_station_identifier=None, verbosity='NOTSET'):
     """Publish a WIS2 Notification Message"""
 
-    if None in [config, url, identifier]:
+    if config is None:
+        raise click.ClickException('missing -c/--config')
+
+    if file_ is None and None in [url, identifier]:
         raise click.ClickException('missing required arguments')
 
     config = util.yaml_load(config)
@@ -171,14 +176,20 @@ def publish(ctx, config, url, topic, identifier, geometry=[],
     else:
         topic2 = topic
 
-    message = create_message(
-        topic=topic2,
-        content_type=config.get('content_type'),
-        url=url,
-        identifier=identifier,
-        geometry=geometry,
-        wigos_station_identifier=wigos_station_identifier
-    )
+    if file_ is not None:
+        if config.get('validate_message', False):
+            ctx.invoke(validate_, message=file_)
+            file_.seek(0)
+        message = json.load(file_)
+    else:
+        message = create_message(
+            topic=topic2,
+            content_type=config.get('content_type'),
+            url=url,
+            identifier=identifier,
+            geometry=geometry,
+            wigos_station_identifier=wigos_station_identifier
+        )
 
     client = MQTTPubSubClient(broker)
     click.echo(f'Connected to broker {client.broker_safe_url}')
