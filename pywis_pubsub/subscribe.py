@@ -43,8 +43,12 @@ LOGGER = logging.getLogger(__name__)
 
 
 class VerificationMethods(enum.Enum):
-    md5 = 'md5'
+    sha256 = 'sha256'
+    sha384 = 'sha_384'
     sha512 = 'sha512'
+    sha3_256 = 'sha3_256'
+    sha3_384 = 'sha3_384'
+    sha3_512 = 'sha3_512'
 
 
 def get_canonical_link(links: list):
