@@ -39,8 +39,12 @@ LOGGER = logging.getLogger(__name__)
 
 
 class SecureHashAlgorithms(Enum):
-    SHA512 = 'sha512'
-    MD5 = 'md5'
+    sha256 = 'sha256'
+    sha384 = 'sha_384'
+    sha512 = 'sha512'
+    sha3_256 = 'sha3_256'
+    sha3_384 = 'sha3_384'
+    sha3_512 = 'sha3_512'
 
 
 def generate_checksum(data: bytes, algorithm: SecureHashAlgorithms) -> str:
@@ -48,7 +52,7 @@ def generate_checksum(data: bytes, algorithm: SecureHashAlgorithms) -> str:
     Generate a checksum of message file
 
     :param data: bytes of data
-    :param algorithm: secure hash algorithm (md5, sha512)
+    :param algorithm: secure hash algorithm (SecureHashAlgorithm)
 
     :returns: hexdigest
     """
@@ -75,7 +79,7 @@ def get_file_info(public_data_url: str) -> dict:
     res.raise_for_status()
 
     filebytes = res.content
-    checksum_type = SecureHashAlgorithms.SHA512.value
+    checksum_type = SecureHashAlgorithms.sha512.value
     return {
         'filename': public_data_url.split('/')[-1],
         'checksum_value': generate_checksum(filebytes, checksum_type),
