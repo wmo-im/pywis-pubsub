@@ -135,7 +135,7 @@ message = create_message(
 )
 
 m = MQTTPubSubClient('mqtt://localhost:1883')
-client.pub(topic, json.dumps(message))
+m.pub(topic, json.dumps(message))
 ```
 
 ## Development
