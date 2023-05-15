@@ -5,3 +5,4 @@ paho-mqtt
 pyyaml
 requests
 shapely<2
+urllib3<2
