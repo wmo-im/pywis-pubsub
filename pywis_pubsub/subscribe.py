@@ -67,11 +67,13 @@ def get_canonical_link(links: list):
         return {}
 
 
-def get_data(msg_dict: dict) -> bytes:
+def get_data(msg_dict: dict, verify_certs=True) -> bytes:
     """
     Data downloading functionality
 
     :param msg_dict: `dict` of notification message
+    :param verify_certs: `bool` of whether to verify
+                         certificates (default true)
 
     :returns: `bytes` of data
     """
@@ -86,9 +88,11 @@ def get_data(msg_dict: dict) -> bytes:
         data = base64.b64decode(msg_dict['content']['value'])
     else:
         LOGGER.debug(f"Downloading from {canonical_link['href']}")
+        LOGGER.debug(f'Certificate verification: {verify_certs}')
         http_session = get_http_session()
         try:
-            data = http_session.get(canonical_link['href']).content
+            data = http_session.get(canonical_link['href'],
+                                    verify=verify_certs).content
         except Exception as err:
             LOGGER.error(f"download error ({canonical_link['href']}): {err}")
             raise
@@ -172,7 +176,7 @@ def on_message_handler(client, userdata, msg):
         LOGGER.debug('Saving data')
         try:
             LOGGER.debug('Downloading data')
-            data = get_data(msg_dict)
+            data = get_data(msg_dict, userdata.get('verify_certs'))
         except Exception as err:
             LOGGER.error(err)
             return
@@ -227,8 +231,11 @@ def subscribe(ctx, config, download, bbox=[], verbosity='NOTSET'):
     broker = config.get('broker')
     qos = int(config.get('qos', 1))
     subscribe_topics = config.get('subscribe_topics', [])
+    verify_certs = config.get('verify_certs', True)
 
-    options = {}
+    options = {
+        'verify_certs': verify_certs
+    }
 
     if bbox:
         options['bbox'] = [float(i) for i in bbox.split(',')]
