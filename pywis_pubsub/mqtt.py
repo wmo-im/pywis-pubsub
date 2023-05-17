@@ -19,12 +19,12 @@
 #
 ###############################################################################
 
+from copy import deepcopy
 import logging
 import random
 from typing import Any, Callable
-
-from copy import deepcopy
 from urllib.parse import urlparse
+
 from paho.mqtt import client as mqtt_client
 from pywis_pubsub import util
 

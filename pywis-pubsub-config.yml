@@ -12,6 +12,9 @@ publish_topic: foo/bar
 # whether to verify data
 verify_data: true
 
+# whether to verify server certificates (default=true)
+# verify_certs: false
+
 # whether to validate message against schema
 validate_message: true
 
