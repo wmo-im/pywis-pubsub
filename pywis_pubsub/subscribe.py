@@ -24,7 +24,6 @@ import enum
 import hashlib
 import json
 import logging
-from pathlib import Path
 
 import click
 from requests import Session
@@ -197,8 +196,7 @@ def on_message_handler(client, userdata, msg):
             else:
                 LOGGER.debug('Data verification passed')
 
-        link = Path(clink['href'])
-        filename = link.name
+        filename = msg_dict['properties']['data_id']
 
         storage_class = STORAGES[userdata.get('storage').get('type')]
         storage_object = storage_class(userdata['storage'])
