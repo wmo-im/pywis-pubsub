@@ -58,7 +58,7 @@ class FileSystem(Storage):
         with filepath.open('wb') as fh:
             fh.write(data)
 
-        LOGGER.info(f'Data saved to {filename}')
+        LOGGER.info(f'Data saved to {filepath}')
 
         return True
 
