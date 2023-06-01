@@ -29,9 +29,9 @@ from pywis_pubsub import cli_options
 
 LOGGER = logging.getLogger(__name__)
 
-MESSAGE_SCHEMA_URL = 'https://raw.githubusercontent.com/wmo-im/wis2-notification-message/main/schemas/notificationMessageGeoJSON.yaml'  # noqa
+MESSAGE_SCHEMA_URL = 'https://raw.githubusercontent.com/wmo-im/wis2-notification-message/main/schemas/wis2-notification-message-bundled.json'  # noqa
 USERDIR = Path.home() / '.pywis-pubsub'
-MESSAGE_SCHEMA = USERDIR / 'wis2-notification-message' / 'WIS2_Message_Format_Schema.yaml'  # noqa
+MESSAGE_SCHEMA = USERDIR / 'wis2-notification-message' / 'wis2-notification-message-bundled.json'  # noqa
 
 
 def sync_schema() -> None:

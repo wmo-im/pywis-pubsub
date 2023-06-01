@@ -28,7 +28,6 @@ from jsonschema import validate
 
 from pywis_pubsub import cli_options
 from pywis_pubsub.schema import MESSAGE_SCHEMA
-from pywis_pubsub.util import yaml_load
 
 LOGGER = logging.getLogger(__name__)
 
@@ -58,7 +57,7 @@ def validate_message(instance: dict) -> Tuple[bool, str]:
         raise RuntimeError(msg)
 
     with open(MESSAGE_SCHEMA) as fh:
-        schema = yaml_load(fh)
+        schema = json.load(fh)
 
     try:
         validate(instance, schema)
