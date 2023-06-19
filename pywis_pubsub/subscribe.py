@@ -162,6 +162,9 @@ def on_message_handler(client, userdata, msg):
 
     if userdata.get('bbox') and msg_dict.get('geometry') is not None:
         LOGGER.debug('Performing spatial filtering')
+        if not bool(msg_dict['geometry']):
+            LOGGER.error(f"Invalid geometry: {msg_dict['geometry']}")
+            return
         if is_message_within_bbox(msg_dict['geometry'], userdata['bbox']):
             LOGGER.debug('Message geometry is within bbox')
         else:
