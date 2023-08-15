@@ -32,12 +32,6 @@ from pywis_pubsub.schema import MESSAGE_SCHEMA
 LOGGER = logging.getLogger(__name__)
 
 
-@click.group()
-def message():
-    """Message utilities"""
-    pass
-
-
 def validate_message(instance: dict) -> Tuple[bool, str]:
     """
     Validate a JSON instance document against an JSON schema
@@ -86,6 +80,3 @@ def validate_(ctx, message, verbosity):
         raise click.ClickException(f'Invalid message: {errors}')
     else:
         click.echo('Valid message')
-
-
-message.add_command(validate_)

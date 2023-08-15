@@ -1,0 +1,27 @@
+{
+    "id": "a23ef8c3-f21f-4230-bdae-5672d0e2a203",
+    "version": "v04",
+    "type": "Feature",
+    "geometry": null,
+    "properties": {
+        "data_id": "wis2/xxg/gts_to_wis2_dwd/data/core/SZIO01/AMMC/A_SZIO01AMMC110648_C_EDZW_20230811064904_50549867",
+        "metadata_id": "urn:x-wmo:md:int.wmo.wis::SZIO01AMMC",
+        "gts": {
+            "ttaaii": "SZIO01",
+            "cccc": "AMMC"
+        },
+        "pubtime": "2023-08-11T06:52:01.395372Z",
+        "integrity": {
+            "method": "sha512",
+            "value": "lT7r2ekzrb3np7Jqk7vACk5qclFUxZXkEqgt1hqU3Tz+4/IaZZnb2KQxFw502Bn0o4v+++ImukvaE7EelTSfoA=="
+        }
+    },
+    "links": [
+        {
+            "href": "https://wisdev.kishou.go.jp/data/wis2/xxg/gts_to_wis2_dwd/data/core/SZIO01/AMMC/A_SZIO01AMMC110648_C_EDZW_20230811064904_50549867/A_SZIO01AMMC110648_C_EDZW_20230811064904_50549867",
+            "rel": "canonical",
+            "type": "application/octet-stream",
+            "length": 465
+        }
+    ]
+}

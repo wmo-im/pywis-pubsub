@@ -30,6 +30,9 @@ from typing import Union
 import yaml
 from urllib.parse import urlparse
 
+from requests import Session
+from requests.adapters import HTTPAdapter, Retry
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -155,3 +158,24 @@ def get_userdir() -> str:
     """
 
     return Path.home() / '.pywis-pubsub'
+
+
+def get_http_session():
+    """
+    Get HTTP session
+
+    :returns: `requests.Session`
+    """
+
+    s = Session()
+    retries = Retry(
+        total=3,
+        status_forcelist=[429, 500, 502, 503, 504],
+        backoff_factor=2
+    )
+
+    adapter = HTTPAdapter(max_retries=retries)
+    s.mount('https://', adapter)
+    s.mount('http://', adapter)
+
+    return s
