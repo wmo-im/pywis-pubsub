@@ -75,7 +75,7 @@ class S3(Storage):
         s3_client = boto3.client('s3', endpoint_url=s3_url)
 
         try:
-            s3_client.put_object(data, s3_bucket, filename)
+            s3_client.put_object(Body=data, Bucket=s3_bucket, Key=filename)
         except ClientError as err:
             LOGGER.error(err)
             return False
