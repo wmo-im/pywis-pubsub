@@ -19,6 +19,7 @@
 #
 ###############################################################################
 
+import base64
 from datetime import datetime
 from enum import Enum
 import hashlib
@@ -60,9 +61,9 @@ def generate_checksum(data: bytes, algorithm: SecureHashAlgorithms) -> str:
     sh = getattr(hashlib, algorithm)()
     sh.update(data)
 
-    hexdigest = sh.hexdigest()
-    LOGGER.debug(f'Hex digest: {hexdigest}')
-    return hexdigest
+    b64_digest = base64.b64encode(sh.digest()).decode()
+    LOGGER.debug(f'Base 64 encoded digest: {b64_digest}')
+    return b64_digest
 
 
 def get_file_info(public_data_url: str) -> dict:

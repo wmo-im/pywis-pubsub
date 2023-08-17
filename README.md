@@ -74,18 +74,25 @@ pywis-pubsub subscribe --config local.yml --bbox=-142,42,-52,84
 
 # subscribe, and filter messages by geometry, increase debugging verbosity
 pywis-pubsub subscribe --config local.yml --bbox=-142,42,-52,84 --verbosity=DEBUG
+```
 
+### Validating a message and verifying data
+
+```bash
 # validate a message
 pywis-pubsub message validate /path/to/message1.json
+
+# verify data from a message
+pywis-pubsub message verify /path/to/message1.json
 ```
 
 ### Publishing
 
 ```bash
 cp pub-config-example.yml pub-local.yml
-vim pub-local.yml # update accordingly to configure publish-options
+vim pub-local.yml # update accordingly to configure publishing options
 
-# example publishing a WIS2-message with attributes: 
+# example publishing a WIS2 notification message with attributes: 
 # unique-id=stationXYZ-20221111085500 
 # data-url=http://www.meteo.xx/stationXYZ-20221111085500.bufr4 
 # lon,lat,elevation=33.8,11.8,112

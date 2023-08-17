@@ -22,8 +22,11 @@
 import json
 import os
 import unittest
+from unittest.mock import patch
 
+from requests import Session
 from pywis_pubsub.validation import validate_message
+from pywis_pubsub.verification import verify_data
 
 TESTDATA_DIR = os.path.dirname(os.path.realpath(__file__))
 
@@ -66,6 +69,21 @@ class PyWISPubSubTest(unittest.TestCase):
             with self.assertRaises(json.decoder.JSONDecodeError):
                 data = json.load(fh)
                 is_valid, errors = validate_message(data)
+
+    @patch.object(Session, 'get')
+    def test_verification(self, mock_get):
+        """Test verification"""
+
+        data_filename = 'A_SZIO01AMMC110648_C_EDZW_20230811064904_50549867'
+
+        with open(get_abspath(data_filename), 'rb') as fh:
+            mock_get.return_value.status_code = 200
+            mock_get.return_value.content = fh.read()
+
+        with open(get_abspath('test_valid_checksum.json')) as fh:
+            data = json.load(fh)
+            is_valid = verify_data(data, True)
+            self.assertTrue(is_valid)
 
 
 if __name__ == '__main__':
