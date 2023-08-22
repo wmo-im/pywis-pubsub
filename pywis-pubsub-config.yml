@@ -9,6 +9,12 @@ subscribe_topics:
 # topic to publish to
 publish_topic: foo/bar
 
+# mqtt client id - randomly generated if not set
+client_id: pywis-pubsub-testing
+
+# clean mqtt session on connection. Set to false to start from server saved offset
+clean_session: true
+
 # whether to verify data
 verify_data: true
 
