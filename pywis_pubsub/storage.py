@@ -49,7 +49,7 @@ class Storage(ABC):
 class FileSystem(Storage):
     def save(self, data: bytes, filename: Path) -> bool:
 
-        filepath = Path(self.options['path']) / filename
+        filepath = Path(self.options['basedir']) / filename
 
         LOGGER.debug(f'Creating directory {filepath.parent}')
         filepath.parent.mkdir(parents=True, exist_ok=True)

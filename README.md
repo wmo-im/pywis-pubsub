@@ -114,7 +114,7 @@ from pywis_pubsub.mqtt import MQTTPubSubClient
 options = {
     'storage': {
         'type': 'fs',
-        'path': '/tmp'
+        'basedir': '/tmp'
     },
     'bbox': [-90, -180, 90, 180]
 }

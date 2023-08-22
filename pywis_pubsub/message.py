@@ -30,7 +30,7 @@ from pywis_pubsub.util import get_http_session
 LOGGER = logging.getLogger(__name__)
 
 
-def get_canonical_link(links: list):
+def get_canonical_link(links: list) -> dict:
     """
     Helper function to derive canonical link from a list of link objects
 

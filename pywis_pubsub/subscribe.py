@@ -98,7 +98,17 @@ def on_message_handler(client, userdata, msg):
             else:
                 LOGGER.debug('Data verification passed')
 
-        filename = msg_dict['properties']['data_id']
+        filepath = userdata['storage']['options'].get('filepath', 'data_id')
+        LOGGER.debug(f'Using {filepath} for naming filepath')
+
+        if filepath == 'link':
+            # fetch canonical link and use local path, stripping slashes
+            link = get_canonical_link(msg_dict['links'])
+            filename = link['href'].split('/', 3)[-1].strip('/')
+        else:
+            filename = msg_dict['properties']['data_id']
+
+        LOGGER.debug(f'filename: {filename}')
 
         storage_class = STORAGES[userdata.get('storage').get('type')]
         storage_object = storage_class(userdata['storage'])
