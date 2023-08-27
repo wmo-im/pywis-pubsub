@@ -21,6 +21,7 @@
 
 import json
 import logging
+import random
 
 import click
 
@@ -128,6 +129,8 @@ def subscribe(ctx, config, download, bbox=[], verbosity='NOTSET'):
     config = util.yaml_load(config)
 
     broker = config.get('broker')
+    default_client_id = f'pywis-pubsub-{random.randint(0, 1000)}'
+    client_id = config.get('client_id', default_client_id)
     qos = int(config.get('qos', 1))
     subscribe_topics = config.get('subscribe_topics', [])
     verify_certs = config.get('verify_certs', True)
@@ -135,6 +138,8 @@ def subscribe(ctx, config, download, bbox=[], verbosity='NOTSET'):
     options = {
         'verify_certs': verify_certs
     }
+    options['client_id'] = client_id
+    options['clean_session'] = config.get('clean_session', True)
 
     if bbox:
         options['bbox'] = [float(i) for i in bbox.split(',')]
