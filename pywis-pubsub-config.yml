@@ -32,7 +32,8 @@ storage:
         # filepath can be one of:
         # - data_id: 'properties.data_id' in the message (default)
         # - link: the local path in the canonical link
-        filepath: data_id, link
+        # - combined: data_id + file extension either from link or guessing the media type
+        filepath: data_id
 
 # storage: s3
 #storage:
