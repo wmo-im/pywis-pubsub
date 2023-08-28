@@ -45,6 +45,18 @@ class Storage(ABC):
 
         pass
 
+    @abstractmethod
+    def delete(self, filename: Path) -> bool:
+        """
+        Deletes data from storage
+
+        :param filename: `str` of filename
+
+        :returns: `bool` of delete result
+        """
+
+        pass
+
 
 class FileSystem(Storage):
     def save(self, data: bytes, filename: Path) -> bool:
@@ -62,25 +74,58 @@ class FileSystem(Storage):
 
         return True
 
+    def delete(self, filename: Path) -> bool:
+        filepath = Path(self.options['basedir']) / filename
+
+        LOGGER.debug(f'Deleting file {filepath}')
+        filepath.unlink()
+
+        LOGGER.info(f'Deleted file {filepath}')
+
+        return True
+
 
 class S3(Storage):
-    def save(self, data: bytes, filename: Path) -> bool:
 
+    @staticmethod
+    def _get_client(self):
         import boto3
-        from botocore.exceptions import ClientError
 
         s3_url = self.options['url']
-        s3_bucket = self.options['bucket']
+        self.s3_bucket = self.options['bucket']
 
         s3_client = boto3.client('s3', endpoint_url=s3_url)
 
+        return s3_client
+
+    def save(self, data: bytes, filename: Path) -> bool:
+
+        s3_client = self._get_client()
+
         try:
-            s3_client.put_object(Body=data, Bucket=s3_bucket, Key=filename)
-        except ClientError as err:
+            s3_client.put_object(Body=data, Bucket=self.s3_bucket,
+                                 Key=filename)
+        except Exception as err:
             LOGGER.error(err)
             return False
 
         LOGGER.info(f'Data saved to {filename}')
+
+        return True
+
+    def delete(self, filename: Path) -> bool:
+
+        s3_client = self._get_client()
+
+        LOGGER.debug(f'Deleting object {filename}')
+
+        try:
+            s3_client.delete_object(Bucket=self.s3_bucket, Key=filename)
+        except Exception as err:
+            LOGGER.error(err)
+            return False
+
+        LOGGER.info(f'Deleted object {filename}')
 
         return True
 
