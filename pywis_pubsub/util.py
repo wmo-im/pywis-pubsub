@@ -23,6 +23,7 @@ from base64 import b64encode
 from datetime import date, datetime, time
 from decimal import Decimal
 import logging
+import mimetypes
 import os
 from pathlib import Path
 import re
@@ -179,3 +180,29 @@ def get_http_session():
     s.mount('http://', adapter)
 
     return s
+
+
+def guess_extension(media_type: str) -> str:
+    """
+    Guess file extension from known WMO media types:
+
+    :media_type: `str` of media type
+
+    :returns: `str` of file extension
+    """
+
+    extension = None
+
+    wmo_extra_types = {
+        'application/x-bufr': '.bufr4',
+        'application/x-grib': '.grib2',
+        'application/cap+xml': '.cap'
+    }
+
+    for key, value in wmo_extra_types.items():
+        mimetypes.add_type(key, value)
+
+    extension = mimetypes.guess_extension(media_type)
+    LOGGER.debug(f'Found {extension}')
+
+    return extension

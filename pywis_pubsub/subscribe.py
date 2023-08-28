@@ -21,6 +21,7 @@
 
 import json
 import logging
+from pathlib import Path
 import random
 
 import click
@@ -98,7 +99,37 @@ def on_message_handler(client, userdata, msg):
             else:
                 LOGGER.debug('Data verification passed')
 
-        filename = msg_dict['properties']['data_id']
+        filepath = userdata['storage']['options'].get('filepath', 'data_id')
+        LOGGER.debug(f'Using {filepath} for naming filepath')
+
+        if filepath == 'link':
+            LOGGER.debug('Using canonical link as filepath')
+            # fetch canonical link and use local path, stripping slashes
+            link = get_canonical_link(msg_dict['links'])
+            filename = link['href'].split('/', 3)[-1].strip('/')
+        elif filepath == 'combined':
+            LOGGER.debug('Using combined data_id+link extension as filepath')
+            filename = msg_dict['properties']['data_id']
+            suffix = Path(get_canonical_link(msg_dict['links'])).suffix
+            if suffix != '':
+                LOGGER.debug(f'File extension found: {suffix}')
+                filename = f'{filename}{suffix}'
+            else:
+                LOGGER.debug('File extension not found. Trying media type')
+                media_type = get_canonical_link(msg_dict['links']).get('type')
+                if media_type is not None:
+                    suffix = util.guess_extension(media_type)
+                    if suffix is not None:
+                        filename = f'{filename}{suffix}'
+                    else:
+                        LOGGER.debug('No extension found. Giving up / using data_id')  # noqa
+                else:
+                    LOGGER.debug('No media type found. Giving up / using data_id')  # noqa
+        else:
+            LOGGER.debug('Using data_id as filepath')
+            filename = msg_dict['properties']['data_id']
+
+        LOGGER.debug(f'filename: {filename}')
 
         storage_class = STORAGES[userdata.get('storage').get('type')]
         storage_object = storage_class(userdata['storage'])

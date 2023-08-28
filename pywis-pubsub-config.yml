@@ -28,7 +28,12 @@ validate_message: true
 storage:
     type: fs
     options:
-        path: /tmp/foo/bar
+        basedir: /tmp/foo/bar
+        # filepath can be one of:
+        # - data_id: 'properties.data_id' in the message (default)
+        # - link: the local path in the canonical link
+        # - combined: data_id + file extension either from link or guessing the media type
+        filepath: data_id
 
 # storage: s3
 #storage:

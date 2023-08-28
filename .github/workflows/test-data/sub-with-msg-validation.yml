@@ -16,4 +16,4 @@ validate_message: true
 storage:
     type: fs
     options:
-        path: .github/workflows/test-data/
+        basedir: .github/workflows/test-data/
