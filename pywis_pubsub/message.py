@@ -42,7 +42,7 @@ def get_link(links: list) -> dict:
     link_types = [
         'canonical',
         'http://def.wmo.int/def/rel/wnm/-/update',
-        'http://def.wmo.int/def/rel/wnm/-/deleted',
+        'http://def.wmo.int/def/rel/wnm/-/deletion',
     ]
 
     try:
