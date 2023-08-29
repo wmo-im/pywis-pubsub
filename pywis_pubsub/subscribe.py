@@ -30,7 +30,7 @@ from pywis_pubsub import cli_options
 from pywis_pubsub import util
 from pywis_pubsub.geometry import is_message_within_bbox
 from pywis_pubsub.hook import load_hook
-from pywis_pubsub.message import get_canonical_link, get_data
+from pywis_pubsub.message import get_link, get_data
 from pywis_pubsub.mqtt import MQTTPubSubClient
 from pywis_pubsub.storage import STORAGES
 from pywis_pubsub.validation import validate_message
@@ -70,7 +70,7 @@ def on_message_handler(client, userdata, msg):
             LOGGER.debug('Message geometry not within bbox; skipping')
             return
 
-    clink = get_canonical_link(msg_dict['links'])
+    clink = get_link(msg_dict['links'])
     LOGGER.info(f"Received message with data URL: {clink['href']}")
 
     if userdata.get('storage') is not None:
@@ -102,21 +102,22 @@ def on_message_handler(client, userdata, msg):
         filepath = userdata['storage']['options'].get('filepath', 'data_id')
         LOGGER.debug(f'Using {filepath} for naming filepath')
 
+        link = get_link(msg_dict['links'])
+
         if filepath == 'link':
-            LOGGER.debug('Using canonical link as filepath')
-            # fetch canonical link and use local path, stripping slashes
-            link = get_canonical_link(msg_dict['links'])
+            LOGGER.debug('Using link as filepath')
+            # fetch link and use local path, stripping slashes
             filename = link['href'].split('/', 3)[-1].strip('/')
         elif filepath == 'combined':
             LOGGER.debug('Using combined data_id+link extension as filepath')
             filename = msg_dict['properties']['data_id']
-            suffix = Path(get_canonical_link(msg_dict['links'])).suffix
+            suffix = Path(link).suffix
             if suffix != '':
                 LOGGER.debug(f'File extension found: {suffix}')
                 filename = f'{filename}{suffix}'
             else:
                 LOGGER.debug('File extension not found. Trying media type')
-                media_type = get_canonical_link(msg_dict['links']).get('type')
+                media_type = link.get('type')
                 if media_type is not None:
                     suffix = util.guess_extension(media_type)
                     if suffix is not None:
@@ -133,7 +134,11 @@ def on_message_handler(client, userdata, msg):
 
         storage_class = STORAGES[userdata.get('storage').get('type')]
         storage_object = storage_class(userdata['storage'])
-        storage_object.save(data, filename)
+
+        if link.get('rel') == 'http://def.wmo.int/def/rel/wnm/-/deletion':
+            storage_object.delete(filename)
+        else:
+            storage_object.save(data, filename)
 
     if userdata.get('hook') is not None:
         LOGGER.debug(f"Hook detected: {userdata['hook']}")

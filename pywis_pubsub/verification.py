@@ -28,7 +28,7 @@ import logging
 import click
 
 from pywis_pubsub import cli_options
-from pywis_pubsub.message import get_canonical_link, get_data
+from pywis_pubsub.message import get_link, get_data
 
 LOGGER = logging.getLogger(__name__)
 
@@ -97,7 +97,7 @@ def verify_data(instance: dict, verify_certs: bool = True) -> bool:
     if 'content' in instance['properties']:
         size = instance['properties']['content']['size']
     else:
-        size = get_canonical_link(instance['links'])['length']
+        size = get_link(instance['links'])['length']
 
     LOGGER.debug(f'size: {size}')
     return data_verified(data, size, method, value)

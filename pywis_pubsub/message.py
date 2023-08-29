@@ -30,19 +30,25 @@ from pywis_pubsub.util import get_http_session
 LOGGER = logging.getLogger(__name__)
 
 
-def get_canonical_link(links: list) -> dict:
+def get_link(links: list) -> dict:
     """
-    Helper function to derive canonical link from a list of link objects
+    Helper function to derive a link from a list of link objects
 
     :param links: `list` of link `dict`s
 
-    :returns: `dict` of first canonical link object found
+    :returns: `dict` of first supported link object found
     """
 
+    link_types = [
+        'canonical',
+        'http://def.wmo.int/def/rel/wnm/-/update',
+        'http://def.wmo.int/def/rel/wnm/-/deletion',
+    ]
+
     try:
-        return list(filter(lambda d: d['rel'] == 'canonical', links))[0]
+        return list(filter(lambda d: d['rel'] in link_types, links))[0]
     except IndexError:
-        LOGGER.error('No canonical link found')
+        LOGGER.error('No link found')
         return {}
 
 
@@ -57,24 +63,24 @@ def get_data(msg_dict: dict, verify_certs=True) -> bytes:
     :returns: `bytes` of data
     """
 
-    canonical_link = get_canonical_link(msg_dict['links'])
+    link = get_link(msg_dict['links'])
 
-    if canonical_link:
-        LOGGER.debug(f'Found canonical link: {canonical_link}')
+    if link:
+        LOGGER.debug(f'Found link: {link}')
 
     if 'content' in msg_dict and 'value' in msg_dict['content']:
         LOGGER.debug('Decoding from inline data')
         data = base64.b64decode(msg_dict['content']['value'])
     else:
-        LOGGER.debug(f"Downloading from {canonical_link['href']}")
+        LOGGER.debug(f"Downloading from {link['href']}")
         LOGGER.debug(f'Certificate verification: {verify_certs}')
         http_session = get_http_session()
         try:
-            data = http_session.get(canonical_link['href'],
+            data = http_session.get(link['href'],
                                     verify=verify_certs).content
             http_session.close()
         except Exception as err:
-            LOGGER.error(f"download error ({canonical_link['href']}): {err}")
+            LOGGER.error(f"download error ({link['href']}): {err}")
             raise
 
     return data
