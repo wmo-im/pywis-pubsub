@@ -178,6 +178,7 @@ def publish(ctx, file_, config, url, topic, identifier, geometry=[],
     config = util.yaml_load(config)
 
     broker = config.get('broker')
+    qos = int(config.get('qos', 1))
 
     if topic is None:
         topic2 = config.get('publish_topic')
@@ -202,4 +203,4 @@ def publish(ctx, file_, config, url, topic, identifier, geometry=[],
     client = MQTTPubSubClient(broker)
     click.echo(f'Connected to broker {client.broker_safe_url}')
     click.echo(f'Publishing message to topic={topic2}')
-    client.pub(topic2, json.dumps(message))
+    client.pub(topic2, json.dumps(message), qos)

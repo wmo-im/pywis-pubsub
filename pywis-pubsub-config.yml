@@ -9,6 +9,9 @@ subscribe_topics:
 # topic to publish to
 publish_topic: foo/bar
 
+# qos (default is 1)
+#qos: 1
+
 # mqtt client id - randomly generated if not set
 client_id: pywis-pubsub-testing
 
