@@ -25,6 +25,7 @@ import unittest
 from unittest.mock import patch
 
 from requests import Session
+from pywis_pubsub.ets import WNMTestSuite
 from pywis_pubsub.validation import validate_message
 from pywis_pubsub.verification import verify_data
 
@@ -84,6 +85,46 @@ class PyWISPubSubTest(unittest.TestCase):
             data = json.load(fh)
             is_valid = verify_data(data, True)
             self.assertTrue(is_valid)
+
+
+class WNMETSTest(unittest.TestCase):
+    """WNM tests of tests"""
+
+    def setUp(self):
+        """setup test fixtures, etc."""
+        pass
+
+    def tearDown(self):
+        """return to pristine state"""
+        pass
+
+    def test_pass(self):
+        """Simple tests for a passing record"""
+        with open(get_abspath('test_valid.json')) as fh:
+            ts = WNMTestSuite(json.load(fh))
+            results = ts.run_tests()
+
+            codes = [r['code'] for r in results['ets-report']['tests']]
+
+            self.assertEqual(codes.count('FAILED'), 0)
+            self.assertEqual(codes.count('PASSED'), 8)
+            self.assertEqual(codes.count('SKIPPED'), 0)
+
+    def test_fail(self):
+        """Simple tests for a failing record"""
+        with open(get_abspath('test_invalid_datetime.json')) as fh:
+            record = json.load(fh)
+            ts = WNMTestSuite(record)
+            results = ts.run_tests()
+
+            codes = [r['code'] for r in results['ets-report']['tests']]
+
+            self.assertEqual(codes.count('FAILED'), 1)
+            self.assertEqual(codes.count('PASSED'), 7)
+            self.assertEqual(codes.count('SKIPPED'), 0)
+
+            with self.assertRaises(ValueError):
+                ts.run_tests(fail_on_schema_validation=True)
 
 
 if __name__ == '__main__':
