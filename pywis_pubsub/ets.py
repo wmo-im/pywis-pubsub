@@ -182,7 +182,7 @@ class WNMTestSuite:
             'code': 'PASSED',
         }
 
-        for dtp in ['datetime', 'start_endtime', 'end_datetime']:
+        for dtp in ['datetime', 'start_datetime', 'end_datetime']:
             value = self.message['properties'].get(dtp)
             if value is not None:
                 if not value.endswith(('Z', '+00:00')):
