@@ -64,10 +64,10 @@ pywis-pubsub --version
 pywis-pubsub schema sync
 
 # validate WNM against abstract test suite (file on disk)
-pywis-pubsub ets validate /path/to/file.xml
+pywis-pubsub ets validate /path/to/file.json
 
 # validate WNM against abstract test suite (URL)
-pywis-pubsub ets validate https://example.org/path/to/file.xml
+pywis-pubsub ets validate https://example.org/path/to/file.json
 
 # validate WNM against abstract test suite (URL)
 pywis-pubsub ets validate https://example.org/path/to/file.json
