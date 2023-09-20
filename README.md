@@ -63,6 +63,15 @@ pywis-pubsub --version
 # sync WIS2 notification schema
 pywis-pubsub schema sync
 
+# validate WNM against abstract test suite (file on disk)
+pywis-pubsub ets validate /path/to/file.json
+
+# validate WNM against abstract test suite (URL)
+pywis-pubsub ets validate https://example.org/path/to/file.json
+
+# validate WNM against abstract test suite (URL), but turn JSON Schema validation off
+pywis-pubsub ets validate https://example.org/path/to/file.json --no-fail-on-schema-validation
+
 # connect, and simply echo messages
 pywis-pubsub subscribe --config local.yml
 

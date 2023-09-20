@@ -27,9 +27,12 @@ import mimetypes
 import os
 from pathlib import Path
 import re
+import ssl
 from typing import Union
 import yaml
+from urllib.error import URLError
 from urllib.parse import urlparse
+from urllib.request import urlopen
 
 from requests import Session
 from requests.adapters import HTTPAdapter, Retry
@@ -206,3 +209,40 @@ def guess_extension(media_type: str) -> str:
     LOGGER.debug(f'Found {extension}')
 
     return extension
+
+
+def get_cli_common_options(function):
+    """
+    Define common CLI options
+    """
+
+    import click
+    function = click.option('--verbosity', '-v',
+                            type=click.Choice(
+                                ['ERROR', 'WARNING', 'INFO', 'DEBUG']),
+                            help='Verbosity')(function)
+    function = click.option('--log', '-l', 'logfile',
+                            type=click.Path(writable=True, dir_okay=False),
+                            help='Log file')(function)
+    return function
+
+
+def urlopen_(url: str):
+    """
+    Helper function for downloading a URL
+
+    :param url: URL to download
+
+    :returns: `http.client.HTTPResponse`
+    """
+
+    try:
+        response = urlopen(url)
+    except (ssl.SSLError, URLError) as err:
+        LOGGER.warning(err)
+        LOGGER.warning('Creating unverified context')
+        context = ssl._create_unverified_context()
+
+        response = urlopen(url, context=context)
+
+    return response

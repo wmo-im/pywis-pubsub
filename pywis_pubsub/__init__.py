@@ -23,6 +23,7 @@ __version__ = '0.6.dev0'
 
 import click
 
+from pywis_pubsub.ets import ets
 from pywis_pubsub.publish import publish
 from pywis_pubsub.schema import schema
 from pywis_pubsub.subscribe import subscribe
@@ -49,6 +50,7 @@ message.add_command(validate_)
 message.add_command(verify)
 
 cli.add_command(message)
+cli.add_command(ets)
 cli.add_command(publish)
 cli.add_command(schema)
 cli.add_command(subscribe)
