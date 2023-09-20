@@ -69,9 +69,6 @@ pywis-pubsub ets validate /path/to/file.json
 # validate WNM against abstract test suite (URL)
 pywis-pubsub ets validate https://example.org/path/to/file.json
 
-# validate WNM against abstract test suite (URL)
-pywis-pubsub ets validate https://example.org/path/to/file.json
-
 # validate WNM against abstract test suite (URL), but turn JSON Schema validation off
 pywis-pubsub ets validate https://example.org/path/to/file.json --no-fail-on-schema-validation
 
