@@ -52,25 +52,18 @@ First check pywis-pubsub was correctly installed
 pywis-pubsub --version
 ```
 
-### Subscribing
+Create configuration
 
 ```bash
 cp pywis-pubsub-config.yml local.yml
 vim local.yml # update accordingly to configure subscribe-options
+```
 
-pywis-pubsub --version
+### Subscribing
 
+```bash
 # sync WIS2 notification schema
 pywis-pubsub schema sync
-
-# validate WNM against abstract test suite (file on disk)
-pywis-pubsub ets validate /path/to/file.json
-
-# validate WNM against abstract test suite (URL)
-pywis-pubsub ets validate https://example.org/path/to/file.json
-
-# validate WNM against abstract test suite (URL), but turn JSON Schema validation off
-pywis-pubsub ets validate https://example.org/path/to/file.json --no-fail-on-schema-validation
 
 # connect, and simply echo messages
 pywis-pubsub subscribe --config local.yml
@@ -93,6 +86,15 @@ pywis-pubsub message validate /path/to/message1.json
 
 # verify data from a message
 pywis-pubsub message verify /path/to/message1.json
+
+# validate WNM against abstract test suite (file on disk)
+pywis-pubsub ets validate /path/to/file.json
+
+# validate WNM against abstract test suite (URL)
+pywis-pubsub ets validate https://example.org/path/to/file.json
+
+# validate WNM against abstract test suite (URL), but turn JSON Schema validation off
+pywis-pubsub ets validate https://example.org/path/to/file.json --no-fail-on-schema-validation
 ```
 
 ### Publishing
