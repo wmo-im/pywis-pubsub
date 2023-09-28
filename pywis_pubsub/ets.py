@@ -84,7 +84,7 @@ class WNMTestSuite:
         if validation_result['code'] == 'FAILED':
             if fail_on_schema_validation:
                 msg = ('Record fails WNM validation. Stopping ETS ',
-                       f"errors: {validation_result['message']}")
+                       f"errors: {validation_result['errors']}")
                 LOGGER.error(msg)
                 raise ValueError(msg)
 
@@ -295,8 +295,6 @@ def validate(ctx, file_or_url, logfile, verbosity,
     try:
         results = ts.run_tests(fail_on_schema_validation)
     except Exception as err:
-        import traceback
-        print(traceback.format_exc())
         raise click.ClickException(err)
 
     click.echo(json.dumps(results, indent=4))
