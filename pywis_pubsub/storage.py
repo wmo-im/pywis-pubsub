@@ -33,6 +33,16 @@ class Storage(ABC):
         self.options = defs.get('options')
 
     @abstractmethod
+    def setup(self) -> bool:
+        """
+        Setup harness
+
+        :returns: `bool` of setup result
+        """
+
+        raise NotImplementedError()
+
+    @abstractmethod
     def save(self, data: bytes, filename: Path) -> bool:
         """
         Save data to storage
@@ -43,7 +53,7 @@ class Storage(ABC):
         :returns: `bool` of save result
         """
 
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def delete(self, filename: Path) -> bool:
@@ -55,10 +65,17 @@ class Storage(ABC):
         :returns: `bool` of delete result
         """
 
-        pass
+        raise NotImplementedError()
 
 
 class FileSystem(Storage):
+    def setup(self) -> bool:
+        basedir = Path(self.options['basedir'])
+        LOGGER.debug(f'Creating directory {basedir}')
+        basedir.mkdir(parents=True, exist_ok=True)
+
+        return True
+
     def save(self, data: bytes, filename: Path) -> bool:
 
         filepath = Path(self.options['basedir']) / filename
@@ -98,9 +115,22 @@ class S3(Storage):
 
         return s3_client
 
+    def setup(self) -> bool:
+
+        s3_client = self._get_client(self)
+
+        try:
+            LOGGER.debug(f'Creating bucket {self.s3_bucket}')
+            s3_client.create_bucket(Bucket=self.s3_bucket)
+        except Exception as err:
+            LOGGER.error(err)
+            return False
+
+        return True
+
     def save(self, data: bytes, filename: Path) -> bool:
 
-        s3_client = self._get_client()
+        s3_client = self._get_client(self)
 
         try:
             s3_client.put_object(Body=data, Bucket=self.s3_bucket,
@@ -115,7 +145,7 @@ class S3(Storage):
 
     def delete(self, filename: Path) -> bool:
 
-        s3_client = self._get_client()
+        s3_client = self._get_client(self)
 
         LOGGER.debug(f'Deleting object {filename}')
 
