@@ -72,7 +72,8 @@ class MQTTPubSubClient:
             else:
                 self.port = 1883
 
-        if self.broker_url.scheme == 'mqtts':
+        if self.port == 8883:
+            LOGGER.debug('Setting TLS version 2')
             self.conn.tls_set(tls_version=2)
 
         self.conn.connect(self.broker_url.hostname, self.port)
@@ -122,7 +123,7 @@ class MQTTPubSubClient:
                 LOGGER.debug(f'Subscribed to topic {topic}, qos {qos}')
 
         def on_disconnect(client, userdata, rc):
-            LOGGER.debug(f'Disconnected from {self.broker}')
+            LOGGER.debug(f'Disconnected from {self.broker}: ({rc})')
 
         LOGGER.debug(f'Subscribing to broker {self.broker_safe_url}, topic(s) {topics}')  # noqa
         self.conn.on_connect = on_connect
