@@ -43,11 +43,23 @@ class Storage(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def exists(self, filename: Path) -> bool:
+        """
+        Verify whether data already exists
+
+        :param filename: `Path` of storage object/file
+
+        :returns: `bool` of whether the filepath exists in storage
+        """
+
+        raise NotImplementedError()
+
+    @abstractmethod
     def save(self, data: bytes, filename: Path) -> bool:
         """
         Save data to storage
 
-        :param data: `byte` of data
+        :param data: `bytes` of data
         :param filename: `str` of filename
 
         :returns: `bool` of save result
@@ -70,11 +82,18 @@ class Storage(ABC):
 
 class FileSystem(Storage):
     def setup(self) -> bool:
+
         basedir = Path(self.options['basedir'])
         LOGGER.debug(f'Creating directory {basedir}')
         basedir.mkdir(parents=True, exist_ok=True)
 
         return True
+
+    def exists(self, filename: Path) -> bool:
+
+        filepath = Path(self.options['basedir']) / filename
+
+        return filepath.exists()
 
     def save(self, data: bytes, filename: Path) -> bool:
 
@@ -92,6 +111,7 @@ class FileSystem(Storage):
         return True
 
     def delete(self, filename: Path) -> bool:
+
         filepath = Path(self.options['basedir']) / filename
 
         LOGGER.debug(f'Deleting file {filepath}')
@@ -106,6 +126,7 @@ class S3(Storage):
 
     @staticmethod
     def _get_client(self):
+
         import boto3
 
         s3_url = self.options['url']
@@ -114,6 +135,17 @@ class S3(Storage):
         s3_client = boto3.client('s3', endpoint_url=s3_url)
 
         return s3_client
+
+    def exists(self, filename: Path) -> bool:
+
+        s3_client = self._get_client(self)
+
+        try:
+            s3_client.head_object(Bucket=self.s3_bucket, Key=filename)
+        except Exception:
+            return False
+
+        return True
 
     def setup(self) -> bool:
 

@@ -56,7 +56,7 @@ Create configuration
 
 ```bash
 cp pywis-pubsub-config.yml local.yml
-vim local.yml # update accordingly to configure subscribe-options
+vim local.yml # update accordingly to configure subscribe options
 ```
 
 ### Subscribing

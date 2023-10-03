@@ -128,16 +128,32 @@ def on_message_handler(client, userdata, msg):
                     LOGGER.debug('No media type found. Giving up / using data_id')  # noqa
         else:
             LOGGER.debug('Using data_id as filepath')
-            filename = msg_dict['properties']['data_id']
+            filename = msg_dict['properties'].get('data_id')
+            if filename is None:
+                LOGGER.error('no data_id found')
+                return
 
         LOGGER.debug(f'filename: {filename}')
 
         storage_class = STORAGES[userdata.get('storage').get('type')]
         storage_object = storage_class(userdata['storage'])
 
+        if not msg_dict['properties'].get('cache', True):
+            LOGGER.debug(f'No caching requested; not saving {filename}')
+            return
+
         if link.get('rel') == 'http://def.wmo.int/def/rel/wnm/-/deletion':
+            LOGGER.debug('Delete specified')
             storage_object.delete(filename)
+        elif link.get('rel') == 'http://def.wmo.int/def/rel/wnm/-/update':
+            LOGGER.debug('Update specified')
+            storage_object.save(data, filename)
         else:
+            if storage_object.exists(filename):
+                LOGGER.debug('Duplicate detected; not saving')
+                return
+
+            LOGGER.debug('Saving')
             storage_object.save(data, filename)
 
     if userdata.get('hook') is not None:
