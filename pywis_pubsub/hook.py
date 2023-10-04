@@ -45,8 +45,8 @@ class Hook(ABC):
 
 
 class TestHook(Hook):
-    def execute(self, msg_dict: dict) -> None:
-        LOGGER.debug(f"Hi from test hook!  Message id: {msg_dict['id']}")
+    def execute(self, topic: str, msg_dict: dict) -> None:
+        LOGGER.debug(f"Hi from test hook!  Topic: {topic}, Message id: {msg_dict['id']}")  # noqa
 
 
 def load_hook(factory) -> Hook:

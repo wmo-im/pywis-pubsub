@@ -161,7 +161,7 @@ def on_message_handler(client, userdata, msg):
         try:
             hook = load_hook(userdata['hook'])
             LOGGER.debug('Executing hook')
-            hook.execute(msg_dict)
+            hook.execute(msg.topic, msg_dict)
         except Exception as err:
             msg = f'Hook failed: {err}'
             LOGGER.error(msg, exc_info=True)
