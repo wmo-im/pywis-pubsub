@@ -22,6 +22,7 @@
 from abc import ABC, abstractmethod
 import logging
 from pathlib import Path
+import shutil
 
 LOGGER = logging.getLogger(__name__)
 
@@ -36,6 +37,16 @@ class Storage(ABC):
     def setup(self) -> bool:
         """
         Setup harness
+
+        :returns: `bool` of setup result
+        """
+
+        raise NotImplementedError()
+
+    @abstractmethod
+    def teardown(self) -> bool:
+        """
+        Teardown setup
 
         :returns: `bool` of setup result
         """
@@ -89,6 +100,12 @@ class FileSystem(Storage):
 
         return True
 
+    def teardown(self) -> bool:
+        LOGGER.debug(f"Deleting directory {self.options['basedir']}")
+        shutil.rmtree(self.options['basedir'])
+
+        return True
+
     def exists(self, filename: Path) -> bool:
 
         filepath = Path(self.options['basedir']) / filename
@@ -135,6 +152,19 @@ class S3(Storage):
         s3_client = boto3.client('s3', endpoint_url=s3_url)
 
         return s3_client
+
+    def teardown(self) -> bool:
+
+        s3_client = self._get_client(self)
+
+        try:
+            LOGGER.debug(f'Deleting bucket {self.s3_bucket}')
+            s3_client.delete_bucket(Bucket=self.s3_bucket)
+        except Exception as err:
+            LOGGER.error(err)
+            return False
+
+        return True
 
     def exists(self, filename: Path) -> bool:
 
