@@ -39,11 +39,18 @@ storage:
         filepath: data_id
 
 # storage: s3
+# NOTE: if S3 credentials are required, set the following environment variables:
+# - AWS_ACCESS_KEY_ID: username
+# - AWS_SECRET_ACCESS_KEY: password
+#
+# no additional configuration is required below
+
 #storage:
 #    type: S3
 #    options:
 #        url: http://localhost:9001
 #        bucket: some-bucket
+#
 
 # advanced functionality: add your own code/workflow/trigger
 #

@@ -32,11 +32,12 @@ class Hook(ABC):
         pass
 
     @abstractmethod
-    def execute(self, msg_dict: dict) -> None:
+    def execute(self, topic: str, msg_dict: dict) -> None:
         """
         Execute a hook
 
-        :param payload: `dict` of message payload
+        :param topic: `str` of topic
+        :param msg_dict: `dict` of message payload
 
         :returns: `None`
         """
@@ -45,8 +46,8 @@ class Hook(ABC):
 
 
 class TestHook(Hook):
-    def execute(self, msg_dict: dict) -> None:
-        LOGGER.debug(f"Hi from test hook!  Message id: {msg_dict['id']}")
+    def execute(self, topic: str, msg_dict: dict) -> None:
+        LOGGER.debug(f"Hi from test hook!  Topic: {topic}, Message id: {msg_dict['id']}")  # noqa
 
 
 def load_hook(factory) -> Hook:

@@ -22,6 +22,7 @@
 from abc import ABC, abstractmethod
 import logging
 from pathlib import Path
+import shutil
 
 LOGGER = logging.getLogger(__name__)
 
@@ -33,17 +34,49 @@ class Storage(ABC):
         self.options = defs.get('options')
 
     @abstractmethod
+    def setup(self) -> bool:
+        """
+        Setup harness
+
+        :returns: `bool` of setup result
+        """
+
+        raise NotImplementedError()
+
+    @abstractmethod
+    def teardown(self) -> bool:
+        """
+        Teardown setup
+
+        :returns: `bool` of setup result
+        """
+
+        raise NotImplementedError()
+
+    @abstractmethod
+    def exists(self, filename: Path) -> bool:
+        """
+        Verify whether data already exists
+
+        :param filename: `Path` of storage object/file
+
+        :returns: `bool` of whether the filepath exists in storage
+        """
+
+        raise NotImplementedError()
+
+    @abstractmethod
     def save(self, data: bytes, filename: Path) -> bool:
         """
         Save data to storage
 
-        :param data: `byte` of data
+        :param data: `bytes` of data
         :param filename: `str` of filename
 
         :returns: `bool` of save result
         """
 
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def delete(self, filename: Path) -> bool:
@@ -55,10 +88,30 @@ class Storage(ABC):
         :returns: `bool` of delete result
         """
 
-        pass
+        raise NotImplementedError()
 
 
 class FileSystem(Storage):
+    def setup(self) -> bool:
+
+        basedir = Path(self.options['basedir'])
+        LOGGER.debug(f'Creating directory {basedir}')
+        basedir.mkdir(parents=True, exist_ok=True)
+
+        return True
+
+    def teardown(self) -> bool:
+        LOGGER.debug(f"Deleting directory {self.options['basedir']}")
+        shutil.rmtree(self.options['basedir'])
+
+        return True
+
+    def exists(self, filename: Path) -> bool:
+
+        filepath = Path(self.options['basedir']) / filename
+
+        return filepath.exists()
+
     def save(self, data: bytes, filename: Path) -> bool:
 
         filepath = Path(self.options['basedir']) / filename
@@ -75,6 +128,7 @@ class FileSystem(Storage):
         return True
 
     def delete(self, filename: Path) -> bool:
+
         filepath = Path(self.options['basedir']) / filename
 
         LOGGER.debug(f'Deleting file {filepath}')
@@ -89,6 +143,7 @@ class S3(Storage):
 
     @staticmethod
     def _get_client(self):
+
         import boto3
 
         s3_url = self.options['url']
@@ -98,9 +153,46 @@ class S3(Storage):
 
         return s3_client
 
+    def teardown(self) -> bool:
+
+        s3_client = self._get_client(self)
+
+        try:
+            LOGGER.debug(f'Deleting bucket {self.s3_bucket}')
+            s3_client.delete_bucket(Bucket=self.s3_bucket)
+        except Exception as err:
+            LOGGER.error(err)
+            return False
+
+        return True
+
+    def exists(self, filename: Path) -> bool:
+
+        s3_client = self._get_client(self)
+
+        try:
+            s3_client.head_object(Bucket=self.s3_bucket, Key=filename)
+        except Exception:
+            return False
+
+        return True
+
+    def setup(self) -> bool:
+
+        s3_client = self._get_client(self)
+
+        try:
+            LOGGER.debug(f'Creating bucket {self.s3_bucket}')
+            s3_client.create_bucket(Bucket=self.s3_bucket)
+        except Exception as err:
+            LOGGER.error(err)
+            return False
+
+        return True
+
     def save(self, data: bytes, filename: Path) -> bool:
 
-        s3_client = self._get_client()
+        s3_client = self._get_client(self)
 
         try:
             s3_client.put_object(Body=data, Bucket=self.s3_bucket,
@@ -115,7 +207,7 @@ class S3(Storage):
 
     def delete(self, filename: Path) -> bool:
 
-        s3_client = self._get_client()
+        s3_client = self._get_client(self)
 
         LOGGER.debug(f'Deleting object {filename}')
 
