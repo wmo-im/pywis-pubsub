@@ -197,15 +197,10 @@ class S3(Storage):
              content_type: str = 'application/octet-stream') -> bool:
 
         s3_client = self._get_client(self)
-        extra_args = {
-            'ContentType': content_type
-        }
-
-        print(extra_args)
 
         try:
             s3_client.put_object(Body=data, Bucket=self.s3_bucket,
-                                 Key=filename, ExtraArgs=extra_args)
+                                 Key=filename, ContentType=content_type)
         except Exception as err:
             LOGGER.error(err)
             return False
