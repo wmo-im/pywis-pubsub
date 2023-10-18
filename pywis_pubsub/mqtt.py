@@ -123,7 +123,7 @@ class MQTTPubSubClient:
                 LOGGER.debug(f'Subscribed to topic {topic}, qos {qos}')
 
         def on_disconnect(client, userdata, rc):
-            LOGGER.debug(f'Disconnected from {self.broker}: ({rc})')
+            LOGGER.debug(f'Disconnected from {self.broker_safe_url}: ({rc})')
 
         LOGGER.debug(f'Subscribing to broker {self.broker_safe_url}, topic(s) {topics}')  # noqa
         self.conn.on_connect = on_connect
