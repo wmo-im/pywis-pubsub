@@ -66,12 +66,14 @@ class Storage(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def save(self, data: bytes, filename: Path) -> bool:
+    def save(self, data: bytes, filename: Path,
+             content_type: str = 'application/octet-stream') -> bool:
         """
         Save data to storage
 
         :param data: `bytes` of data
         :param filename: `str` of filename
+        :param content_type: media type (default is `application/octet-stream`)
 
         :returns: `bool` of save result
         """
@@ -112,7 +114,8 @@ class FileSystem(Storage):
 
         return filepath.exists()
 
-    def save(self, data: bytes, filename: Path) -> bool:
+    def save(self, data: bytes, filename: Path,
+             content_type: str = 'application/octet-stream') -> bool:
 
         filepath = Path(self.options['basedir']) / filename
 
@@ -190,13 +193,19 @@ class S3(Storage):
 
         return True
 
-    def save(self, data: bytes, filename: Path) -> bool:
+    def save(self, data: bytes, filename: Path,
+             content_type: str = 'application/octet-stream') -> bool:
 
         s3_client = self._get_client(self)
+        extra_args = {
+            'ContentType': content_type
+        }
+
+        print(extra_args)
 
         try:
             s3_client.put_object(Body=data, Bucket=self.s3_bucket,
-                                 Key=filename)
+                                 Key=filename, ExtraArgs=extra_args)
         except Exception as err:
             LOGGER.error(err)
             return False

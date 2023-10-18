@@ -135,6 +135,8 @@ def on_message_handler(client, userdata, msg):
 
         LOGGER.debug(f'filename: {filename}')
 
+        content_type = link.get('type', 'applcation/octet-stream')
+
         storage_class = STORAGES[userdata.get('storage').get('type')]
         storage_object = storage_class(userdata['storage'])
 
@@ -147,14 +149,14 @@ def on_message_handler(client, userdata, msg):
             storage_object.delete(filename)
         elif link.get('rel') == 'http://def.wmo.int/def/rel/wnm/-/update':
             LOGGER.debug('Update specified')
-            storage_object.save(data, filename)
+            storage_object.save(data, filename, content_type)
         else:
             if storage_object.exists(filename):
                 LOGGER.debug('Duplicate detected; not saving')
                 return
 
             LOGGER.debug('Saving')
-            storage_object.save(data, filename)
+            storage_object.save(data, filename, content_type)
 
     if userdata.get('hook') is not None:
         LOGGER.debug(f"Hook detected: {userdata['hook']}")
