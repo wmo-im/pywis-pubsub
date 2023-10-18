@@ -23,13 +23,28 @@ from abc import ABC, abstractmethod
 import importlib
 import logging
 
+from paho.mqtt import client as mqtt_client
+
 LOGGER = logging.getLogger(__name__)
 
 
 class Hook(ABC):
     # @abstractmethod
-    def __init__(self):
-        pass
+    def __init__(self, client: mqtt_client = None):
+        """
+        Initializer
+
+        :param client: optional `paho.mqtt.client` object.
+                       If this parameter is passed, a hook implementation
+                       publishing messages can reuse an existing passed client
+                       session (i.e. `self.client`).  Passing a client allows
+                       a hook implmeentation to better manage conections for
+                       advanced applications if required.
+
+        :returns: `pywis_pubsub.hook.Hook`
+        """
+
+        self.client = client
 
     @abstractmethod
     def execute(self, topic: str, msg_dict: dict) -> None:
@@ -50,11 +65,11 @@ class TestHook(Hook):
         LOGGER.debug(f"Hi from test hook!  Topic: {topic}, Message id: {msg_dict['id']}")  # noqa
 
 
-def load_hook(factory) -> Hook:
+def load_hook(factory: str) -> Hook:
     """
     Load hook plugin
 
-    :param factory: dotted path of Python module/class
+    :param factory: `str` of dotted path of Python module/class
 
     :returns: hook object
     """
