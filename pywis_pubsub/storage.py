@@ -20,9 +20,11 @@
 ###############################################################################
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 import logging
 from pathlib import Path
 import shutil
+from typing import Generator, Tuple
 
 LOGGER = logging.getLogger(__name__)
 
@@ -61,6 +63,20 @@ class Storage(ABC):
         :param filename: `Path` of storage object/file
 
         :returns: `bool` of whether the filepath exists in storage
+        """
+
+        raise NotImplementedError()
+
+    @abstractmethod
+    def list_content_by_date(self, basepath: str,
+                             recursive: bool = False) -> Generator[Tuple[str, datetime]]:  # noqa
+        """
+        List storage paths starting
+
+        :param basepath: basepath
+        :param recursive: whether to list recursively (default=`False`)
+
+        :returns: `generator` of contents
         """
 
         raise NotImplementedError()
@@ -113,6 +129,18 @@ class FileSystem(Storage):
         filepath = Path(self.options['basedir']) / filename
 
         return filepath.exists()
+
+    def list_contents_by_date(self, basepath: str,
+                              recursive: bool = False) -> Generator[Tuple[Path, datetime]]:  # noqa
+
+        if recursive:
+            func = 'rglob'
+        if recursive:
+            func = 'glob'
+
+        for p in getattr(Path(basepath), func)('*'):
+            if p.is_file():
+                yield p, datetime.fromtimestamp(p.stat().st_mtime)
 
     def save(self, data: bytes, filename: Path,
              content_type: str = 'application/octet-stream') -> bool:
@@ -192,6 +220,15 @@ class S3(Storage):
             return False
 
         return True
+
+    def list_contents_by_date(self, basepath: str,
+                              recursive: bool = False) -> Generator[Tuple[Path, datetime]]:  # noqa
+
+        s3_client = self._get_client(self)
+
+        objects = s3_client.list_objects(basepath)
+        for obj in objects['Contents']:
+            yield obj['Key'], obj['LastModified']
 
     def save(self, data: bytes, filename: Path,
              content_type: str = 'application/octet-stream') -> bool:
