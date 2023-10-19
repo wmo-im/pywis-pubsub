@@ -24,7 +24,7 @@ from datetime import datetime
 import logging
 from pathlib import Path
 import shutil
-from typing import Generator, Tuple
+from typing import Iterator, Tuple
 
 LOGGER = logging.getLogger(__name__)
 
@@ -68,8 +68,8 @@ class Storage(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def list_content_by_date(self, basepath: str,
-                             recursive: bool = False) -> Generator[Tuple[str, datetime]]:  # noqa
+    def list_contents_by_date(self, basepath: str = None,
+                             recursive: bool = False) -> Iterator[Tuple[str, datetime]]:  # noqa
         """
         List storage paths starting
 
@@ -130,13 +130,16 @@ class FileSystem(Storage):
 
         return filepath.exists()
 
-    def list_contents_by_date(self, basepath: str,
-                              recursive: bool = False) -> Generator[Tuple[Path, datetime]]:  # noqa
+    def list_contents_by_date(self, basepath: str = None,
+                              recursive: bool = False) -> Iterator[Tuple[Path, datetime]]:  # noqa
 
         if recursive:
             func = 'rglob'
         if recursive:
             func = 'glob'
+
+        if basepath is None:
+            basepath = '/'
 
         for p in getattr(Path(basepath), func)('*'):
             if p.is_file():
@@ -221,12 +224,20 @@ class S3(Storage):
 
         return True
 
-    def list_contents_by_date(self, basepath: str,
-                              recursive: bool = False) -> Generator[Tuple[Path, datetime]]:  # noqa
+    def list_contents_by_date(self, basepath: str = None,
+                              recursive: bool = False) -> Iterator[Tuple[Path, datetime]]:  # noqa
 
         s3_client = self._get_client(self)
 
-        objects = s3_client.list_objects(basepath)
+        params = {
+            'Bucket': self.s3_bucket
+        }
+
+        if basepath is not None:
+            params['Prefix'] = basepath
+
+        objects = s3_client.list_objects(**params)
+
         for obj in objects['Contents']:
             yield obj['Key'], obj['LastModified']
 
