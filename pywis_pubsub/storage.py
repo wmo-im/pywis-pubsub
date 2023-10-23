@@ -192,6 +192,13 @@ class S3(Storage):
         s3_client = self._get_client(self)
 
         try:
+            objects_to_delete = s3_client.list_objects(Bucket=self.s3_bucket, Prefix='')
+            objs = [{'Key' : k} for k in [obj['Key'] for obj in objects_to_delete.get('Contents', [])]]  # noqa
+            delete_keys = {'Objects' : objs}
+
+            LOGGER.debug('Deleting all bucket objects')
+            s3_client.delete_objects(Bucket=self.s3_bucket, Delete=delete_keys)
+
             LOGGER.debug(f'Deleting bucket {self.s3_bucket}')
             s3_client.delete_bucket(Bucket=self.s3_bucket)
         except Exception as err:
