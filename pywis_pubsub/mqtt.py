@@ -130,6 +130,15 @@ class MQTTPubSubClient:
         self.conn.on_disconnect = on_disconnect
         self.conn.loop_forever()
 
+    def close(self) -> None:
+        """
+        Close MQTT connection
+
+        :returns: `None`
+        """
+
+        self.conn.disconnect()
+
     def bind(self, event: str, function: Callable[..., Any]) -> None:
         """
         Binds an event to a function
