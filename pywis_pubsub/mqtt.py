@@ -54,10 +54,10 @@ class MQTTPubSubClient:
         if options:
             self.userdata = deepcopy(options)
 
-        transport = "tcp"
+        transport = 'tcp'
         # if scheme is ws or wss, set transport to websockets
         if self.broker_url.scheme in ['ws', 'wss']:
-            transport = "websockets"
+            transport = 'websockets'
 
         msg = f'Connecting to broker {self.broker_safe_url} with id {self.client_id}'  # noqa
         LOGGER.debug(msg)
