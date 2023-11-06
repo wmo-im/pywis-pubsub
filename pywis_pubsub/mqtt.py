@@ -54,9 +54,16 @@ class MQTTPubSubClient:
         if options:
             self.userdata = deepcopy(options)
 
+        transport = "tcp"
+        # if scheme is ws or wss, set transport to websockets
+        if self.broker_url.scheme in ['ws', 'wss']:
+            transport = "websockets"
+
         msg = f'Connecting to broker {self.broker_safe_url} with id {self.client_id}'  # noqa
         LOGGER.debug(msg)
-        self.conn = mqtt_client.Client(self.client_id, userdata=self.userdata)
+        self.conn = mqtt_client.Client(self.client_id,
+                                       userdata=self.userdata,
+                                       transport=transport)
 
         self.conn.enable_logger(logger=LOGGER)
 
@@ -66,9 +73,14 @@ class MQTTPubSubClient:
                 self.broker_url.username,
                 self.broker_url.password)
 
+        # guess the port if not specified from the scheme
         if self.port is None:
             if self.broker_url.scheme == 'mqtts':
                 self.port = 8883
+            elif self.broker_url.scheme == 'wss':
+                self.port = 443
+            elif self.broker_url.scheme == 'ws':
+                self.port = 80
             else:
                 self.port = 1883
 
