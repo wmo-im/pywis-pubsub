@@ -173,6 +173,7 @@ def get_http_session():
 
     s = Session()
     retries = Retry(
+        connect=1,
         total=3,
         status_forcelist=[429, 500, 502, 503, 504],
         backoff_factor=2

@@ -20,9 +20,11 @@
 ###############################################################################
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 import logging
 from pathlib import Path
 import shutil
+from typing import Iterator, Tuple
 
 LOGGER = logging.getLogger(__name__)
 
@@ -66,12 +68,28 @@ class Storage(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def save(self, data: bytes, filename: Path) -> bool:
+    def list_contents_by_date(self, basepath: str = None,
+                             recursive: bool = False) -> Iterator[Tuple[str, datetime]]:  # noqa
+        """
+        List storage paths starting
+
+        :param basepath: basepath
+        :param recursive: whether to list recursively (default=`False`)
+
+        :returns: `generator` of contents
+        """
+
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save(self, data: bytes, filename: Path,
+             content_type: str = 'application/octet-stream') -> bool:
         """
         Save data to storage
 
         :param data: `bytes` of data
         :param filename: `str` of filename
+        :param content_type: media type (default is `application/octet-stream`)
 
         :returns: `bool` of save result
         """
@@ -112,7 +130,23 @@ class FileSystem(Storage):
 
         return filepath.exists()
 
-    def save(self, data: bytes, filename: Path) -> bool:
+    def list_contents_by_date(self, basepath: str = None,
+                              recursive: bool = False) -> Iterator[Tuple[Path, datetime]]:  # noqa
+
+        if recursive:
+            func = 'rglob'
+        if recursive:
+            func = 'glob'
+
+        if basepath is None:
+            basepath = '/'
+
+        for p in getattr(Path(basepath), func)('*'):
+            if p.is_file():
+                yield p, datetime.fromtimestamp(p.stat().st_mtime)
+
+    def save(self, data: bytes, filename: Path,
+             content_type: str = 'application/octet-stream') -> bool:
 
         filepath = Path(self.options['basedir']) / filename
 
@@ -158,6 +192,14 @@ class S3(Storage):
         s3_client = self._get_client(self)
 
         try:
+            objects_to_delete = s3_client.list_objects(
+                Bucket=self.s3_bucket, Prefix='')
+            objs = [{'Key' : k} for k in [obj['Key'] for obj in objects_to_delete.get('Contents', [])]]  # noqa
+            delete_keys = {'Objects': objs}
+
+            LOGGER.debug('Deleting all bucket objects')
+            s3_client.delete_objects(Bucket=self.s3_bucket, Delete=delete_keys)
+
             LOGGER.debug(f'Deleting bucket {self.s3_bucket}')
             s3_client.delete_bucket(Bucket=self.s3_bucket)
         except Exception as err:
@@ -190,13 +232,31 @@ class S3(Storage):
 
         return True
 
-    def save(self, data: bytes, filename: Path) -> bool:
+    def list_contents_by_date(self, basepath: str = None,
+                              recursive: bool = False) -> Iterator[Tuple[Path, datetime]]:  # noqa
+
+        s3_client = self._get_client(self)
+
+        params = {
+            'Bucket': self.s3_bucket
+        }
+
+        if basepath is not None:
+            params['Prefix'] = basepath
+
+        objects = s3_client.list_objects(**params)
+
+        for obj in objects['Contents']:
+            yield obj['Key'], obj['LastModified']
+
+    def save(self, data: bytes, filename: Path,
+             content_type: str = 'application/octet-stream') -> bool:
 
         s3_client = self._get_client(self)
 
         try:
             s3_client.put_object(Body=data, Bucket=self.s3_bucket,
-                                 Key=filename)
+                                 Key=filename, ContentType=content_type)
         except Exception as err:
             LOGGER.error(err)
             return False
