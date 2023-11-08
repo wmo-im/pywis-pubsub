@@ -84,7 +84,7 @@ class MQTTPubSubClient:
             else:
                 self.port = 1883
 
-        if self.port == 8883:
+        if self.port == 8883 or self.port == 443:
             LOGGER.debug('Setting TLS version 2')
             self.conn.tls_set(tls_version=2)
 
