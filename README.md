@@ -108,10 +108,10 @@ vim pub-local.yml # update accordingly to configure publishing options
 # data-url=http://www.meteo.xx/stationXYZ-20221111085500.bufr4 
 # lon,lat,elevation=33.8,11.8,112
 # wigos_station_identifier=0-20000-12345
-pywis-pubsub publish --topic origin/a/wis2/country/centre-id/data/core/weather --config pub-local.yml -i stationXYZ-20221111085500 -u https://example.org/stationXYZ-20221111085500.bufr4 -g 33.8,-11.8,8.112 -w 0-20000-12345
+pywis-pubsub publish --topic origin/a/wis2/centre-id/data/core/weather --config pub-local.yml -i stationXYZ-20221111085500 -u https://example.org/stationXYZ-20221111085500.bufr4 -g 33.8,-11.8,8.112 -w 0-20000-12345
 
 # publish a message from file on disk
-pywis-pubsub publish --topic origin/a/wis2/country/centre-id/data/core/weather --config pub-local.yml --file my_message.json
+pywis-pubsub publish --topic origin/a/wis2/centre-id/data/core/weather --config pub-local.yml --file my_message.json
 ```
 
 ### Using the API
