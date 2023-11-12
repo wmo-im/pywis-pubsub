@@ -5,7 +5,7 @@
     "geometry": null,
     "properties": {
         "data_id": "wis2/xxg/gts_to_wis2_dwd/data/core/SZIO01/AMMC/A_SZIO01AMMC110648_C_EDZW_20230811064904_50549867",
-        "metadata_id": "urn:x-wmo:md:int.wmo.wis::SZIO01AMMC",
+        "metadata_id": "urn:x-wmo:md:int-wmo-wis::SZIO01AMMC",
         "gts": {
             "ttaaii": "SZIO01",
             "cccc": "AMMC"
