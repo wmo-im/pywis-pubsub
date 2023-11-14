@@ -128,4 +128,3 @@ dmypy.json
 # Pyre type checker
 .pyre/
 test-data/WIGOS_0-454-2-AWSCHIKANGAWA_20221109T135500.bufr4
-test-config.yml

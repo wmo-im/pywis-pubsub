@@ -87,8 +87,11 @@ class MQTTPubSubClient:
         if self.port in [443, 8883]:
             LOGGER.debug('Setting TLS version 2')
             self.conn.tls_set(tls_version=2)
-
-        self.conn.connect(self.broker_url.hostname, self.port)
+        try:
+            self.conn.connect(self.broker_url.hostname, self.port)
+        except Exception as e:
+            LOGGER.error(f'Could not connect to {self.broker_safe_url}: {e}')
+            raise e
         LOGGER.debug('Connected to broker')
 
     def pub(self, topic: str, message: str, qos: int = 1) -> bool:

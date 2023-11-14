@@ -28,7 +28,6 @@ import click
 
 import threading
 import time
-import os
 
 from pywis_pubsub import cli_options
 from pywis_pubsub import util

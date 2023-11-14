@@ -1,0 +1,17 @@
+###################
+broker: $BROKER_URL
+
+# whether to verify data
+verify_data: $VERIFY_DATA
+
+# whether to validate message against schema
+validate_message: $VALIDATE_MESSAGE
+
+# whether to verify certificates of the broker
+verify_certs: $VERIFY_CERTS
+
+# subscription_polling_enabled, default is false
+subscription_polling_enabled: $SUBSCRIPTION_POLLING_ENABLED
+subscription_polling_interval: $SUBSCRIPTION_POLLING_INTERVAL
+# subscription_polling_url: "http://192.168.100.103:5000/wis2/subscriptions/list"
+subscription_polling_url: $SUBSCRIPTION_POLLING_URL
