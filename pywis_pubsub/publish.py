@@ -81,16 +81,22 @@ def get_file_info(public_data_url: str) -> dict:
 
     filebytes = res.content
     checksum_type = SecureHashAlgorithms.sha512.value
-    return {
+    file_info = {
         'filename': public_data_url.split('/')[-1],
         'checksum_value': generate_checksum(filebytes, checksum_type),
         'checksum_type': checksum_type,
         'size': len(filebytes)
     }
 
+    if len(filebytes) < 4096:
+        file_info['data'] = base64.b64encode(filebytes)
+
+    return file_info
+
 
 def create_message(topic: str, content_type: str, url: str, identifier: str,
-                   geometry = [], wigos_station_identifier: str = None) -> dict:  # noqa
+                   geometry: list = [], inline: bool = False,
+                   wigos_station_identifier: str = None) -> dict:
     """
     Create WIS2 compliant message
 
@@ -99,6 +105,8 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
     :identifier: `str` of unique-id to help global broker deduplicate data
     :geometry: point array defining longitude,latitude,elevation
                (elevation is optional
+    :inline: `bool` of whether to publish the data inline as base64
+             (default False)
     :wigos_station_identifier: `str` of WSI for station as used in OSCAR
 
     :returns: `dict` of message
@@ -147,6 +155,15 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
                 'length': file_info['size']
             }]
     }
+
+    if file_info.get('data') is not None and inline:
+        LOGGER.debug('Including data inline via properties.content')
+        message['properties']['content'] = {
+            'encoding': 'base64',
+            'value': file_info['data'],
+            'size': file_info['size']
+        }
+
     if wigos_station_identifier is not None:
         message['properties']['wigos_station_identifier'] = wigos_station_identifier  # noqa
 
@@ -160,13 +177,15 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
 @click.option('--file', '-f', 'file_', type=click.File(), help='url of data')
 @click.option('--url', '-u', help='url of data')
 @click.option('--identifier', '-i', help='unique file identifier')
+@click.option('--inline', '-in', default=False,
+              help='whether to publish the data inline as base64 (default=False)')  # noqa
 @click.option('--topic', '-t', help='topic to publish to')
 @click.option('--geometry', '-g',
               help='point geometry as longitude,latitude,elevation (elevation is optional)')  # noqa
 @click.option('--wigos_station_identifier', '-w',
               help='WIGOS station identifier')
-def publish(ctx, file_, config, url, topic, identifier, geometry=[],
-            wigos_station_identifier=None, verbosity='NOTSET'):
+def publish(ctx, file_, config, url, topic, identifier, inline=False,
+            geometry=[], wigos_station_identifier=None, verbosity='NOTSET'):
     """Publish a WIS2 Notification Message"""
 
     if config is None:
@@ -197,6 +216,7 @@ def publish(ctx, file_, config, url, topic, identifier, geometry=[],
             url=url,
             identifier=identifier,
             geometry=geometry,
+            inline=inline,
             wigos_station_identifier=wigos_station_identifier
         )
 
