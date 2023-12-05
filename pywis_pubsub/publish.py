@@ -95,7 +95,8 @@ def get_file_info(public_data_url: str) -> dict:
 
 
 def create_message(topic: str, content_type: str, url: str, identifier: str,
-                   geometry: list = [], inline: bool = False,
+                   inline: bool = False, geometry: list = [],
+                   metadata_id: str = None,
                    wigos_station_identifier: str = None) -> dict:
     """
     Create WIS2 compliant message
@@ -103,10 +104,11 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
     :param topic: `str` of topic
     :url: `str` of url pointing to data
     :identifier: `str` of unique-id to help global broker deduplicate data
-    :geometry: point array defining longitude,latitude,elevation
-               (elevation is optional
     :inline: `bool` of whether to publish the data inline as base64
              (default False)
+    :geometry: point array defining longitude,latitude,elevation
+               (elevation is optional
+    :metadata_id: `str` of WCMP2 metadata record identifier
     :wigos_station_identifier: `str` of WSI for station as used in OSCAR
 
     :returns: `dict` of message
@@ -164,6 +166,9 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
             'size': file_info['size']
         }
 
+    if metadata_id is not None:
+        message['properties']['metadata_id'] = metadata_id
+
     if wigos_station_identifier is not None:
         message['properties']['wigos_station_identifier'] = wigos_station_identifier  # noqa
 
@@ -182,10 +187,12 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
 @click.option('--topic', '-t', help='topic to publish to')
 @click.option('--geometry', '-g',
               help='point geometry as longitude,latitude,elevation (elevation is optional)')  # noqa
+@click.option('--metadata-id', '-m', help='WCMP2 metadata record identifier')
 @click.option('--wigos_station_identifier', '-w',
               help='WIGOS station identifier')
 def publish(ctx, file_, config, url, topic, identifier, inline=False,
-            geometry=[], wigos_station_identifier=None, verbosity='NOTSET'):
+            geometry=[], metadata_id=None, wigos_station_identifier=None,
+            verbosity='NOTSET'):
     """Publish a WIS2 Notification Message"""
 
     if config is None:
@@ -215,8 +222,9 @@ def publish(ctx, file_, config, url, topic, identifier, inline=False,
             content_type=config.get('content_type'),
             url=url,
             identifier=identifier,
-            geometry=geometry,
             inline=inline,
+            geometry=geometry,
+            metadata_id=metadata_id,
             wigos_station_identifier=wigos_station_identifier
         )
 
