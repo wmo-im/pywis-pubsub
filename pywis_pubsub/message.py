@@ -29,6 +29,12 @@ from pywis_pubsub.util import get_http_session
 
 LOGGER = logging.getLogger(__name__)
 
+LINK_TYPES = {
+    'create': 'canonical',
+    'update': 'http://def.wmo.int/def/rel/wnm/-/update',
+    'delete': 'http://def.wmo.int/def/rel/wnm/-/deletion'
+}
+
 
 def get_link(links: list) -> dict:
     """
@@ -39,14 +45,9 @@ def get_link(links: list) -> dict:
     :returns: `dict` of first supported link object found
     """
 
-    link_types = [
-        'canonical',
-        'http://def.wmo.int/def/rel/wnm/-/update',
-        'http://def.wmo.int/def/rel/wnm/-/deletion'
-    ]
-
     try:
-        return list(filter(lambda d: d['rel'] in link_types, links))[0]
+        return list(filter(lambda d: d['rel'] in LINK_TYPES.values(),
+                    links))[0]
     except IndexError:
         LOGGER.error('No link found')
         return {}

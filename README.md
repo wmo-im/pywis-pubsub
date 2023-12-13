@@ -113,6 +113,12 @@ pywis-pubsub publish --topic origin/a/wis2/centre-id/data/core/weather --config 
 # publish a message with a WCMP2 metadata id
 pywis-pubsub publish --topic origin/a/wis2/centre-id/data/core/weather --config pub-local.yml -i stationXYZ-20221111085500 -u https://example.org/stationXYZ-20221111085500.bufr4 -g 33.8,-11.8,8.112 -w 0-20000-12345 --metadata-id "x-urn:wmo:md:test-foo:htebmal2001"
 
+# publish a message as a data update
+pywis-pubsub publish --topic origin/a/wis2/centre-id/data/core/weather --config pub-local.yml -i stationXYZ-20221111085500 -u https://example.org/stationXYZ-20221111085500.bufr4 -g 33.8,-11.8,8.112 -w 0-20000-12345 --metadata-id "x-urn:wmo:md:test-foo:htebmal2001" --operation update
+
+# publish a message as a data deletion
+pywis-pubsub publish --topic origin/a/wis2/centre-id/data/core/weather --config pub-local.yml -i stationXYZ-20221111085500 -u https://example.org/stationXYZ-20221111085500.bufr4 -g 33.8,-11.8,8.112 -w 0-20000-12345 --metadata-id "x-urn:wmo:md:test-foo:htebmal2001" --operation delete
+
 # publish a message from file on disk
 pywis-pubsub publish --topic origin/a/wis2/centre-id/data/core/weather --config pub-local.yml --file my_message.json
 ```
@@ -153,7 +159,8 @@ message = create_message(
         identifier='stationXYZ-20221111085500', 
         geometry=[33.8, -11.8, 123],
         metadata_id='x-urn:wmo:md:test-foo:htebmal2001',
-        wigos_station_identifier='0-20000-12345'
+        wigos_station_identifier='0-20000-12345',
+        operation='update'
 )
 
 m = MQTTPubSubClient('mqtt://localhost:1883')

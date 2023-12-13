@@ -26,12 +26,14 @@ import hashlib
 import json
 import logging
 import mimetypes
+from typing import Union
 
 import click
 import requests
 
 from pywis_pubsub import cli_options
 from pywis_pubsub import util
+from pywis_pubsub.message import LINK_TYPES
 from pywis_pubsub.mqtt import MQTTPubSubClient
 from pywis_pubsub.validation import validate_
 
@@ -97,7 +99,8 @@ def get_file_info(public_data_url: str) -> dict:
 def create_message(topic: str, content_type: str, url: str, identifier: str,
                    inline: bool = False, geometry: list = [],
                    metadata_id: str = None,
-                   wigos_station_identifier: str = None) -> dict:
+                   wigos_station_identifier: str = None,
+                   operation: Union[str] = 'create') -> dict:
     """
     Create WIS2 compliant message
 
@@ -110,9 +113,12 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
                (elevation is optional
     :metadata_id: `str` of WCMP2 metadata record identifier
     :wigos_station_identifier: `str` of WSI for station as used in OSCAR
+    :operation: `str` of message operation
 
     :returns: `dict` of message
     """
+
+    print("JJ", operation)
 
     publish_datetime = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
 
@@ -158,6 +164,14 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
             }]
     }
 
+    if operation != 'canonical':
+        message['links'].append({
+            'rel': LINK_TYPES[operation],
+            'type': content_type2,
+            'href': url,
+            'length': file_info['size']
+        })
+
     if file_info.get('data') is not None and inline:
         LOGGER.debug('Including data inline via properties.content')
         message['properties']['content'] = {
@@ -190,9 +204,11 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
 @click.option('--metadata-id', '-m', help='WCMP2 metadata record identifier')
 @click.option('--wigos_station_identifier', '-w',
               help='WIGOS station identifier')
+@click.option('--operation', '-op', type=click.Choice(LINK_TYPES.keys()),
+              default='create', help='message operation')
 def publish(ctx, file_, config, url, topic, identifier, inline=False,
             geometry=[], metadata_id=None, wigos_station_identifier=None,
-            verbosity='NOTSET'):
+            operation='create', verbosity='NOTSET'):
     """Publish a WIS2 Notification Message"""
 
     if config is None:
@@ -225,7 +241,8 @@ def publish(ctx, file_, config, url, topic, identifier, inline=False,
             inline=inline,
             geometry=geometry,
             metadata_id=metadata_id,
-            wigos_station_identifier=wigos_station_identifier
+            wigos_station_identifier=wigos_station_identifier,
+            operation=operation
         )
 
     client = MQTTPubSubClient(broker)
