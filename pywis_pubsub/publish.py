@@ -110,7 +110,7 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
     :inline: `bool` of whether to publish the data inline as base64
              (default False)
     :geometry: point array defining longitude,latitude,elevation
-               (elevation is optional
+               (elevation is optional)
     :metadata_id: `str` of WCMP2 metadata record identifier
     :wigos_station_identifier: `str` of WSI for station as used in OSCAR
     :operation: `str` of message operation
@@ -125,10 +125,9 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
     file_info = get_file_info(url)
 
     if geometry:
-        point = [float(i) for i in geometry.split(',')]
         geometry2 = {
             'type': 'Point',
-            'coordinates': point
+            'coordinates': geometry
         }
     else:
         geometry2 = None
@@ -162,7 +161,7 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
             }]
     }
 
-    if operation != 'canonical':
+    if operation != 'create':
         message['links'].append({
             'rel': LINK_TYPES[operation],
             'type': content_type2,
