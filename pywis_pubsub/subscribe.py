@@ -188,9 +188,13 @@ def subscribe(ctx, config, download, bbox=[], verbosity='NOTSET'):
     qos = int(config.get('qos', 1))
     subscribe_topics = config.get('subscribe_topics', [])
     verify_certs = config.get('verify_certs', True)
+    certfile = config.get('certfile')
+    keyfile = config.get('keyfile')
 
     options = {
-        'verify_certs': verify_certs
+        'verify_certs': verify_certs,
+        'certfile': certfile,
+        'keyfile': keyfile
     }
     options['client_id'] = client_id
     options['clean_session'] = config.get('clean_session', True)

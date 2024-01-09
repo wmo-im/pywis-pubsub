@@ -85,8 +85,19 @@ class MQTTPubSubClient:
                 self.port = 1883
 
         if self.port in [443, 8883]:
-            LOGGER.debug('Setting TLS version 2')
-            self.conn.tls_set(tls_version=2)
+            tls_settings = {
+                'tls_version': 2
+            }
+            LOGGER.debug(f'TLS settings: {tls_settings}')
+            if options.get('certfile') is not None:
+                LOGGER.debug('Setting TLS certfile')
+                self.conn.tls_set(options.get('certfile'), **tls_settings)
+            elif options.get('keyfile') is not None:
+                LOGGER.debug('Setting TLS keyfile')
+                self.conn.tls_set(options.get('keyfile'), **tls_settings)
+            else:
+                LOGGER.debug('Setting TLS defaults')
+                self.conn.tls_set(**tls_settings)
 
         self.conn.connect(self.broker_url.hostname, self.port)
         LOGGER.debug('Connected to broker')
