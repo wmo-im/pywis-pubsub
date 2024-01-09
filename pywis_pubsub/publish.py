@@ -118,8 +118,6 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
     :returns: `dict` of message
     """
 
-    print("JJ", operation)
-
     publish_datetime = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
 
     # get filename, length and calculate checksum
