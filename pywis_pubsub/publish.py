@@ -98,6 +98,9 @@ def get_file_info(public_data_url: str) -> dict:
 
 def create_message(topic: str, content_type: str, url: str, identifier: str,
                    inline: bool = False, geometry: list = [],
+                   datetime_: datetime = None,
+                   start_datetime: datetime = None,
+                   end_datetime: datetime = None,
                    metadata_id: str = None,
                    wigos_station_identifier: str = None,
                    operation: Union[str] = 'create') -> dict:
@@ -105,20 +108,21 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
     Create WIS2 compliant message
 
     :param topic: `str` of topic
-    :url: `str` of url pointing to data
-    :identifier: `str` of unique-id to help global broker deduplicate data
-    :inline: `bool` of whether to publish the data inline as base64
+    :param url: `str` of url pointing to data
+    :param identifier: `str` of unique-id to help global broker deduplicate data  # noqa
+    :param inline: `bool` of whether to publish the data inline as base64
              (default False)
-    :geometry: point array defining longitude,latitude,elevation
-               (elevation is optional
-    :metadata_id: `str` of WCMP2 metadata record identifier
-    :wigos_station_identifier: `str` of WSI for station as used in OSCAR
-    :operation: `str` of message operation
+    :param datetime_: `datetime` object of data (time instant)
+    :param start_datetime: `datetime` object of start date
+    :param end_datetime: `datetime` object of end date
+    :param geometry: point array defining longitude,latitude,elevation
+               (elevation is optional)
+    :param metadata_id: `str` of WCMP2 metadata record identifier
+    :param wigos_station_identifier: `str` of WSI for station as used in OSCAR
+    :param operation: `str` of message operation
 
     :returns: `dict` of message
     """
-
-    print("JJ", operation)
 
     publish_datetime = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
 
@@ -127,10 +131,9 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
     file_info = get_file_info(url)
 
     if geometry:
-        point = [float(i) for i in geometry.split(',')]
         geometry2 = {
             'type': 'Point',
-            'coordinates': point
+            'coordinates': geometry
         }
     else:
         geometry2 = None
@@ -164,7 +167,15 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
             }]
     }
 
-    if operation != 'canonical':
+    if None not in [start_datetime, end_datetime]:
+        LOGGER.debug('Setting time extent')
+        message['properties']['start_datetime'] = start_datetime
+        message['properties']['endstart_datetime'] = end_datetime
+    else:
+        LOGGER.debug('Setting time instant')
+        message['properties']['datetime'] = datetime_
+
+    if operation != 'create':
         message['links'].append({
             'rel': LINK_TYPES[operation],
             'type': content_type2,
@@ -199,6 +210,9 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
 @click.option('--inline', '-in', default=False,
               help='whether to publish the data inline as base64 (default=False)')  # noqa
 @click.option('--topic', '-t', help='topic to publish to')
+@click.option('--datetime', '-d', 'datetime_',
+              help='Datetime instant or extent')
+@click.option('--topic', '-t', help='topic to publish to')
 @click.option('--geometry', '-g',
               help='point geometry as longitude,latitude,elevation (elevation is optional)')  # noqa
 @click.option('--metadata-id', '-m', help='WCMP2 metadata record identifier')
@@ -206,9 +220,10 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
               help='WIGOS station identifier')
 @click.option('--operation', '-op', type=click.Choice(LINK_TYPES.keys()),
               default='create', help='message operation')
-def publish(ctx, file_, config, url, topic, identifier, inline=False,
-            geometry=[], metadata_id=None, wigos_station_identifier=None,
-            operation='create', verbosity='NOTSET'):
+def publish(ctx, file_, config, url, topic, datetime_, identifier,
+            inline=False, geometry=[], metadata_id=None,
+            wigos_station_identifier=None, operation='create',
+            verbosity='NOTSET'):
     """Publish a WIS2 Notification Message"""
 
     if config is None:
@@ -218,6 +233,10 @@ def publish(ctx, file_, config, url, topic, identifier, inline=False,
         raise click.ClickException('missing required arguments')
 
     config = util.yaml_load(config)
+
+    datetime_2 = None
+    start_datetime = None
+    end_datetime = None
 
     broker = config.get('broker')
     qos = int(config.get('qos', 1))
@@ -233,12 +252,28 @@ def publish(ctx, file_, config, url, topic, identifier, inline=False,
             file_.seek(0)
         message = json.load(file_)
     else:
+        if datetime_ is not None:
+            if '/' in datetime_:
+                start, end = datetime_.split('/')
+                if start:
+                    start_datetime = datetime.strptime(
+                        start, '%Y-%m-%dT%H:%M:%S%Z')
+                if end:
+                    end_datetime = datetime.strptime(
+                        end, '%Y-%m-%dT%H:%M:%S%Z')
+            else:
+                datetime_2 = datetime.strptime(
+                    datetime_, '%Y-%m-%dT%H:%M:%S%Z')
+
         message = create_message(
             topic=topic2,
             content_type=config.get('content_type'),
             url=url,
             identifier=identifier,
             inline=inline,
+            datetime_=datetime_2,
+            start_datetime=start_datetime,
+            end_datetime=end_datetime,
             geometry=geometry,
             metadata_id=metadata_id,
             wigos_station_identifier=wigos_station_identifier,
@@ -248,4 +283,4 @@ def publish(ctx, file_, config, url, topic, identifier, inline=False,
     client = MQTTPubSubClient(broker)
     click.echo(f'Connected to broker {client.broker_safe_url}')
     click.echo(f'Publishing message to topic={topic2}')
-    client.pub(topic2, json.dumps(message), qos)
+    client.pub(topic2, json.dumps(message, default=util.json_serial), qos)

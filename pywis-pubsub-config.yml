@@ -21,8 +21,16 @@ clean_session: true
 # whether to verify data
 verify_data: true
 
+# TLS settings
+
 # whether to verify server certificates (default=true)
 # verify_certs: false
+
+# PEM encoded client certificate
+# certfile: /path/to/file.cert
+
+# private key
+# keyfile: /path/to/file.key
 
 # whether to validate message against schema
 validate_message: true
