@@ -74,7 +74,7 @@ def json_serial(obj: object) -> Union[bytes, str, float]:
 
     if isinstance(obj, (datetime, date, time)):
         LOGGER.debug('Returning as ISO 8601 string')
-        return obj.isoformat()
+        return obj.isoformat().replace('+00:00', 'Z')
     elif isinstance(obj, bytes):
         try:
             LOGGER.debug('Returning as UTF-8 decoded bytes')

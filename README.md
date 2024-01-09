@@ -113,6 +113,12 @@ pywis-pubsub publish --topic origin/a/wis2/centre-id/data/core/weather --config 
 # publish a message with a WCMP2 metadata id
 pywis-pubsub publish --topic origin/a/wis2/centre-id/data/core/weather --config pub-local.yml -i stationXYZ-20221111085500 -u https://example.org/stationXYZ-20221111085500.bufr4 -g 33.8,-11.8,8.112 -w 0-20000-12345 --metadata-id "x-urn:wmo:md:test-foo:htebmal2001"
 
+# publish a message with a datetime (instant)
+pywis-pubsub publish --topic origin/a/wis2/centre-id/data/core/weather --config pub-local.yml -i stationXYZ-20221111085500 -u https://example.org/stationXYZ-20221111085500.bufr4 -g 33.8,-11.8,8.112 -w 0-20000-12345 --metadata-id "x-urn:wmo:md:test-foo:htebmal2001" --datetime 2024-01-08T22:56:23Z
+
+# publish a message with a start and end datetime (extent)
+pywis-pubsub publish --topic origin/a/wis2/centre-id/data/core/weather --config pub-local.yml -i stationXYZ-20221111085500 -u https://example.org/stationXYZ-20221111085500.bufr4 -g 33.8,-11.8,8.112 -w 0-20000-12345 --metadata-id "x-urn:wmo:md:test-foo:htebmal2001" --datetime 2024-01-08T20:56:23Z/2024-01-08T22:56:43Z
+
 # publish a message as a data update
 pywis-pubsub publish --topic origin/a/wis2/centre-id/data/core/weather --config pub-local.yml -i stationXYZ-20221111085500 -u https://example.org/stationXYZ-20221111085500.bufr4 -g 33.8,-11.8,8.112 -w 0-20000-12345 --metadata-id "x-urn:wmo:md:test-foo:htebmal2001" --operation update
 
@@ -149,6 +155,9 @@ m.sub(topics)
 
 ```python
 # publish example
+
+from datetime import datetime, timezone
+
 from pywis_pubsub.mqtt import MQTTPubSubClient
 from pywis_pubsub.publish import create_message
 
@@ -157,6 +166,7 @@ message = create_message(
         content_type='application/x-bufr',
         url='http://www.meteo.xx/stationXYZ-20221111085500.bufr4', 
         identifier='stationXYZ-20221111085500', 
+        datetime=datetime.now(timezone.utc),
         geometry=[33.8, -11.8, 123],
         metadata_id='x-urn:wmo:md:test-foo:htebmal2001',
         wigos_station_identifier='0-20000-12345',
