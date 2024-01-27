@@ -256,4 +256,4 @@ def get_current_datetime_rfc3339() -> str:
     :returns: `str` of RFC3339 datetime
     """
 
-    datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%ST')
+    datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
