@@ -20,7 +20,7 @@
 ###############################################################################
 
 from base64 import b64encode
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timezone
 from decimal import Decimal
 import logging
 import mimetypes
@@ -247,3 +247,13 @@ def urlopen_(url: str):
         response = urlopen(url, context=context)
 
     return response
+
+
+def get_current_datetime_rfc3339() -> str:
+    """
+    Gets the current datetime in RFC3339 format
+
+    :returns: `str` of RFC3339 datetime
+    """
+
+    datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%ST')
