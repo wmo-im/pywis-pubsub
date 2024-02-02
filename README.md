@@ -95,6 +95,23 @@ pywis-pubsub ets validate https://example.org/path/to/file.json
 
 # validate WNM against abstract test suite (URL), but turn JSON Schema validation off
 pywis-pubsub ets validate https://example.org/path/to/file.json --no-fail-on-schema-validation
+
+# key performance indicators
+
+# set environment variable for GDC URL
+export PYWIS_PUBSUB_GDC_URL=https://api.weather.gc.ca/collections/wis2-discovery-metadata
+
+# all key performance indicators at once
+pywis-pubsub kpi validate https://example.org/path/to/file.json --verbosity DEBUG
+
+# all key performance indicators at once, but turn ETS validation off
+pywis-pubsub kpi validate https://example.org/path/to/file.json --no-fail-on-ets --verbosity DEBUG
+
+# all key performance indicators at once, in summary
+pywis-pubsub kpi validate https://example.org/path/to/file.json --verbosity DEBUG --summary
+
+# selected key performance indicator
+pywis-pubsub kpi validate --kpi metadata_id /path/to/file.json -v INFO
 ```
 
 ### Publishing
@@ -133,8 +150,8 @@ pywis-pubsub publish --topic origin/a/wis2/centre-id/data/core/weather --config 
 
 Python examples:
 
+Subscribing to a WIS2 Global Broker
 ```python
-# subscriber example
 from pywis_pubsub.mqtt import MQTTPubSubClient
 
 options = {
@@ -153,9 +170,8 @@ m = MQTTPubSubClient('mqtt://localhost:1883', options)
 m.sub(topics)
 ```
 
+Publishing a WIS2 Notification Message
 ```python
-# publish example
-
 from datetime import datetime, timezone
 
 from pywis_pubsub.mqtt import MQTTPubSubClient
@@ -175,6 +191,18 @@ message = create_message(
 
 m = MQTTPubSubClient('mqtt://localhost:1883')
 m.pub(topic, json.dumps(message))
+```
+
+Running KPIs
+```pycon
+>>> # test KPI
+>>> import json
+>>> from pywis_pubsub.kpi import WNMKeyPerformanceIndicators
+>>> with open('/path/to/file.json') as fh:
+...     data = json.load(fh)
+>>> kpis = WNMKeyPerformanceIndicators(data)
+>>> results = kpis.evaluate()
+>>> results['summary']
 ```
 
 ## Development

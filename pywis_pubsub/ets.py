@@ -21,7 +21,6 @@
 
 # executable test suite as per WNM, Annex A
 
-from io import BytesIO
 import json
 import logging
 
@@ -30,7 +29,8 @@ from jsonschema.validators import Draft202012Validator
 
 from pywis_pubsub.schema import MESSAGE_SCHEMA
 from pywis_pubsub.message import get_link
-from pywis_pubsub.util import get_cli_common_options, urlopen_
+from pywis_pubsub.util import (get_cli_common_options,
+                               get_current_datetime_rfc3339, urlopen_)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -96,6 +96,7 @@ class WNMTestSuite:
             ets_report['summary'][code] = r
 
         ets_report['tests'] = results
+        ets_report['datetime'] = get_current_datetime_rfc3339()
 
         return {
             'ets-report': ets_report
@@ -282,16 +283,15 @@ def validate(ctx, file_or_url, logfile, verbosity,
     click.echo(f'Opening {file_or_url}')
 
     if file_or_url.startswith('http'):
-        content = BytesIO(urlopen_(file_or_url).read())
+        content = urlopen_(file_or_url).read()
     else:
-        content = file_or_url
+        with open(file_or_url) as fh:
+            content = fh.read()
 
-    with open(content) as fh:
-        data = json.load(fh)
-
+    content = json.loads(content)
     click.echo(f'Validating {file_or_url}')
 
-    ts = WNMTestSuite(data)
+    ts = WNMTestSuite(content)
     try:
         results = ts.run_tests(fail_on_schema_validation)
     except Exception as err:

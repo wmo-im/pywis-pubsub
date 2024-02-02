@@ -26,6 +26,7 @@ from unittest.mock import patch
 
 from requests import Session
 from pywis_pubsub.ets import WNMTestSuite
+from pywis_pubsub.kpi import calculate_grade, WNMKeyPerformanceIndicators
 from pywis_pubsub.validation import validate_message
 from pywis_pubsub.verification import verify_data
 
@@ -125,6 +126,44 @@ class WNMETSTest(unittest.TestCase):
 
             with self.assertRaises(ValueError):
                 ts.run_tests(fail_on_schema_validation=True)
+
+
+class WNMKPITest(unittest.TestCase):
+    """WNM KPI tests of tests"""
+
+    def setUp(self):
+        """setup test fixtures, etc."""
+        pass
+
+    def tearDown(self):
+        """return to pristine state"""
+        pass
+
+    def test_kpi_evaluate(self):
+        file_ = 'test_valid.json'
+        with open(get_abspath(file_)) as fh:
+            data = json.load(fh)
+
+        kpis = WNMKeyPerformanceIndicators(data)
+
+        results = kpis.evaluate()
+
+        self.assertEqual(results['summary']['total'], 2)
+        self.assertEqual(results['summary']['score'], 0)
+        self.assertEqual(results['summary']['percentage'], 0)
+        self.assertEqual(results['summary']['grade'], 0)
+
+    def test_calculate_grade(self):
+        self.assertEqual(calculate_grade(98), 'A')
+        self.assertEqual(calculate_grade(77), 'B')
+        self.assertEqual(calculate_grade(66), 'B')
+        self.assertEqual(calculate_grade(52), 'C')
+        self.assertEqual(calculate_grade(41), 'D')
+        self.assertEqual(calculate_grade(33), 'E')
+        self.assertIsNone(calculate_grade(None))
+
+        with self.assertRaises(ValueError):
+            calculate_grade(101)
 
 
 if __name__ == '__main__':

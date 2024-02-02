@@ -1,7 +1,7 @@
 boto3
 click
 jsonschema
-paho-mqtt
+paho-mqtt<2
 pyyaml
 requests
 shapely<2
