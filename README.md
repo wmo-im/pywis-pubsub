@@ -189,7 +189,8 @@ message = create_message(
         operation='update'
 )
 
-m = MQTTPubSubClient('mqtt://localhost:1883') m.pub(topic, json.dumps(message))
+m = MQTTPubSubClient('mqtt://localhost:1883')
+m.pub(topic, json.dumps(message))
 ```
 
 Running KPIs
