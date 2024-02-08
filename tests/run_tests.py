@@ -108,7 +108,7 @@ class WNMETSTest(unittest.TestCase):
             codes = [r['code'] for r in results['ets-report']['tests']]
 
             self.assertEqual(codes.count('FAILED'), 0)
-            self.assertEqual(codes.count('PASSED'), 8)
+            self.assertEqual(codes.count('PASSED'), 7)
             self.assertEqual(codes.count('SKIPPED'), 0)
 
     def test_fail(self):
@@ -121,7 +121,7 @@ class WNMETSTest(unittest.TestCase):
             codes = [r['code'] for r in results['ets-report']['tests']]
 
             self.assertEqual(codes.count('FAILED'), 1)
-            self.assertEqual(codes.count('PASSED'), 7)
+            self.assertEqual(codes.count('PASSED'), 6)
             self.assertEqual(codes.count('SKIPPED'), 0)
 
             with self.assertRaises(ValueError):

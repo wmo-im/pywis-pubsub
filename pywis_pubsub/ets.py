@@ -23,6 +23,7 @@
 
 import json
 import logging
+from uuid import UUID
 
 import click
 from jsonschema.validators import Draft202012Validator
@@ -142,21 +143,13 @@ class WNMTestSuite:
         status = {
             'id': gen_test_id('id'),
             'code': 'PASSED',
-            'message': 'Passes given schema is compliant/valid'
         }
 
-        return status
-
-    def test_requirement_type(self):
-        """
-        Check for the existence of a valid type property.
-        """
-
-        status = {
-            'id': gen_test_id('type'),
-            'code': 'PASSED',
-            'message': 'Passes given schema is compliant/valid'
-        }
+        try:
+            UUID(self.message['id'])
+        except ValueError as err:
+            status['code'] = 'FAILED'
+            status['message'] = f'Invalid UUID: {err}'
 
         return status
 
