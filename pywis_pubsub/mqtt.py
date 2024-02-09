@@ -112,6 +112,7 @@ class MQTTPubSubClient:
         :returns: `bool` of publish result
         """
 
+        self.conn.loop()
         LOGGER.debug(f'Publishing to broker {self.broker_safe_url}')
         LOGGER.debug(f'Topic: {topic}')
         LOGGER.debug(f'Message: {message}')
