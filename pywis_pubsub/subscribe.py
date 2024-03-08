@@ -144,10 +144,10 @@ def on_message_handler(client, userdata, msg):
             LOGGER.debug(f'No caching requested; not saving {filename}')
             return
 
-        if link.get('rel') == 'http://def.wmo.int/def/rel/wnm/-/deletion':
+        if link.get('rel') == 'deletion':
             LOGGER.debug('Delete specified')
             storage_object.delete(filename)
-        elif link.get('rel') == 'http://def.wmo.int/def/rel/wnm/-/update':
+        elif link.get('rel') == 'update':
             LOGGER.debug('Update specified')
             storage_object.save(data, filename, content_type)
         else:

@@ -31,8 +31,8 @@ LOGGER = logging.getLogger(__name__)
 
 LINK_TYPES = {
     'create': 'canonical',
-    'update': 'http://def.wmo.int/def/rel/wnm/-/update',
-    'delete': 'http://def.wmo.int/def/rel/wnm/-/deletion'
+    'update': 'update',
+    'delete': 'deletion'
 }
 
 
