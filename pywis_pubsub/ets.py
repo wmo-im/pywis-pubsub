@@ -45,7 +45,7 @@ def gen_test_id(test_id: str) -> str:
     :returns: test identifier as URI
     """
 
-    return f'http://wis.wmo.int/spec/wnm/1/req/conf/core/{test_id}'
+    return f'http://wis.wmo.int/spec/wnm/1/conf/core/{test_id}'
 
 
 class WNMTestSuite:
