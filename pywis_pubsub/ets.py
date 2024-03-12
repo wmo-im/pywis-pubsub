@@ -28,6 +28,8 @@ from uuid import UUID
 import click
 from jsonschema.validators import Draft202012Validator
 
+
+import pywis_pubsub
 from pywis_pubsub.schema import MESSAGE_SCHEMA
 from pywis_pubsub.message import get_link
 from pywis_pubsub.util import (get_cli_common_options,
@@ -71,6 +73,7 @@ class WNMTestSuite:
         tests = []
         ets_report = {
             'summary': {},
+            'generated-by': f'pywis-pubsub {pywis_pubsub.__version__} (https://github.com/wmo-im/pywis-pubsub)'  # noqa
         }
 
         for f in dir(WNMTestSuite):

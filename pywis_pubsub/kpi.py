@@ -28,6 +28,7 @@ import os
 import click
 import requests
 
+import pywis_pubsub
 from pywis_pubsub.ets import WNMTestSuite
 from pywis_pubsub .util import (get_cli_common_options,
                                 get_current_datetime_rfc3339, urlopen_)
@@ -161,6 +162,7 @@ class WNMKeyPerformanceIndicators:
         results['summary']['grade'] = overall_grade
 
         results['datetime'] = get_current_datetime_rfc3339()
+        results['generated-by'] = f'pywis-pubsub {pywis_pubsub.__version__} (https://github.com/wmo-im/pywis-pubsub)'  # noqa
 
         return results
 
