@@ -1,3 +1,36 @@
+pywis-pubsub (0.7.1) focal; urgency=medium
+
+ * update link reltypes per WNM updates
+ * fix ETS base URI, datetime function
+ * add generated-by to reports
+
+ -- Tom Kralidis <tomkralidis@gmail.com>  Tue, 12 Mar 2024 22:54:10 +0000
+
+pywis-pubsub (0.7.0) focal; urgency=medium
+
+ * addition of KPI framework
+ * updating of WNM namespace
+ * update ETS to check for valid id UUID
+ * add loop to paho workflow for message publishing
+
+ -- Tom Kralidis <tomkralidis@gmail.com>  Mon, 19 Feb 2024 00:25:36 +0000
+
+pywis-pubsub (0.6.0) focal; urgency=medium
+
+  * added ability to set client_id and clean_session
+  * make storage filepath configurable to data_id or canonical link
+  * support WNM updates for updated/deleted link relations
+  * add qos config for publishing workflows
+  * add ETS implementation
+  * add support for WebSockets
+  * add media type support for s3 storage
+  * update CLI return code
+  * add metadata_id option for message creation
+  * add further TLS support for certfile / keyfile
+  * add support for datetime/start_datetime/end_datetime on message creation
+
+ -- Tom Kralidis <tomkralidis@gmail.com>  Tue, 09 Jan 2024 11:24:42 +0000
+
 pywis-pubsub (0.5.0) focal; urgency=medium
 
   * safe invalid geometry

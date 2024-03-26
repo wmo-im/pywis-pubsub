@@ -225,6 +225,7 @@ python3 setup.py test
 ```bash
 # create release (x.y.z is the release version)
 vi pywis_pubsub/__init__.py  # update __version__
+vi debian/changelog  # add changelog entry
 git commit -am 'update release version x.y.z'
 git push origin main
 git tag -a x.y.z -m 'tagging release version x.y.z'
