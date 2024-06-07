@@ -28,6 +28,7 @@ from pywis_pubsub.kpi import kpi
 from pywis_pubsub.publish import publish
 from pywis_pubsub.schema import schema
 from pywis_pubsub.subscribe import subscribe
+from pywis_pubsub.relay import relay
 from pywis_pubsub.validation import validate_
 from pywis_pubsub.verification import verify
 
@@ -56,3 +57,4 @@ cli.add_command(kpi)
 cli.add_command(publish)
 cli.add_command(schema)
 cli.add_command(subscribe)
+cli.add_command(relay)
