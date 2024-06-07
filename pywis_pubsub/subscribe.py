@@ -183,7 +183,7 @@ def subscribe(ctx, config, download, bbox=[], verbosity='NOTSET'):
     config = util.yaml_load(config)
 
     broker = config.get('broker')
-    default_client_id = f'pywis-pubsub-{random.randint(0, 1000)}'
+    default_client_id = f'pywis-pubsub'
     client_id = config.get('client_id', default_client_id)
     qos = int(config.get('qos', 1))
     subscribe_topics = config.get('subscribe_topics', [])
