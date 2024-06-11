@@ -164,7 +164,7 @@ class WNMTestSuite:
         status = {
             'id': gen_test_id('geometry'),
             'code': 'PASSED',
-            'message': 'Passes given schema is compliant/valid'
+            'message': 'Passes given document is compliant/valid'
         }
 
         return status
@@ -196,7 +196,7 @@ class WNMTestSuite:
         status = {
             'id': gen_test_id('data_id'),
             'code': 'PASSED',
-            'message': 'Passes given schema is compliant/valid'
+            'message': 'Passes given document is compliant/valid'
         }
 
         return status
@@ -209,7 +209,7 @@ class WNMTestSuite:
         status = {
             'id': gen_test_id('version'),
             'code': 'PASSED',
-            'message': 'Passes given schema is compliant/valid'
+            'message': 'Passes given document is compliant/valid'
         }
 
         return status
@@ -221,7 +221,8 @@ class WNMTestSuite:
 
         status = {
             'id': gen_test_id('conformance'),
-            'code': 'PASSED'
+            'code': 'PASSED',
+            'message': 'Passes given document is compliant/valid'
         }
 
         return status
