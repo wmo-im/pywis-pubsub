@@ -53,6 +53,8 @@ class MQTTPubSubClient:
 
         if options:
             self.userdata = deepcopy(options)
+            client_id_prefix = options.get('client_id', 'pywis-pubsub')
+            self.client_id = f'{client_id_prefix}-{random.randint(0, 1000)}'
 
         transport = 'tcp'
         # if scheme is ws or wss, set transport to websockets
