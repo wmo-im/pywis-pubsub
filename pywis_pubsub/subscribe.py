@@ -71,7 +71,11 @@ def on_message_handler(client, userdata, msg):
             return
 
     clink = get_link(msg_dict['links'])
-    LOGGER.info(f"Received message with data URL: {clink['href']}")
+    if not clink:
+        LOGGER.warning('No valid data link found')
+        return
+
+    LOGGER.info(f"Received message with data URL: {clink.get('href')}")
 
     if userdata.get('storage') is not None:
         LOGGER.debug('Saving data')
