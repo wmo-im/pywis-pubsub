@@ -1,3 +1,10 @@
+pywis-pubsub (0.7.2) noble; urgency=medium
+
+ * safeguard WNM link href checking
+ * set client id based on config parameter if available
+
+ -- Tom Kralidis <tomkralidis@gmail.com>  Fri, 26 July 2024 11:34:52 +0000
+
 pywis-pubsub (0.7.1) focal; urgency=medium
 
  * update link reltypes per WNM updates
