@@ -139,7 +139,7 @@ def on_message_handler(client, userdata, msg):
 
         LOGGER.debug(f'filename: {filename}')
 
-        content_type = link.get('type', 'applcation/octet-stream')
+        content_type = link.get('type', 'application/octet-stream')
 
         storage_class = STORAGES[userdata.get('storage').get('type')]
         storage_object = storage_class(userdata['storage'])
