@@ -1,7 +1,7 @@
 {
     "id": "a23ef8c3-f21f-4230-bdae-5672d0e2a203",
     "conformsTo": [
-        "http://wis.wmo.int/spec/wcmp/2/conf/core"
+        "http://wis.wmo.int/spec/wnm/1/conf/core"
     ],
     "type": "Feature",
     "geometry": null,
