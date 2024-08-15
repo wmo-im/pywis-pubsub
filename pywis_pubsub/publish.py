@@ -149,6 +149,7 @@ def create_message(topic: str, content_type: str, url: str, identifier: str,
     message = {
             'id': identifier,
             'type': 'Feature',
+            'conformsTo': ['http://wis.wmo.int/spec/wnm/1/conf/core'],
             'version': 'v04',
             'geometry': geometry2,
             'properties': {
