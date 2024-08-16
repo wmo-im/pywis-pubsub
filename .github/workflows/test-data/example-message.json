@@ -1,7 +1,9 @@
 {
     "id": "WIGOS_0-454-2-AWSCHIKANGAWA_20221109T135500",
     "type": "Feature",
-    "version": "v04",
+    "conformsTo": [
+        "http://wis.wmo.int/spec/wcmp/2/conf/core"
+    ],
     "geometry": {
         "type": "Point",
         "coordinates": [
