@@ -167,6 +167,9 @@ topics = [
 ]
 
 m = MQTTPubSubClient('mqtt://localhost:1883', options)
+# example with credentials
+# m = MQTTPubSubClient('mqtt://username:password@localhost:1883', options)
+
 m.sub(topics)
 ```
 
