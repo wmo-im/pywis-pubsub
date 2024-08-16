@@ -2,7 +2,7 @@
 # RFC1738 URL
 broker: mqtts://localhost:1883
 
-# RFC1738 URL with credentiald
+# RFC1738 URL with credentials
 #broker: mqtts://username:password@localhost:1883
 
 # list of topics to subscribe to
