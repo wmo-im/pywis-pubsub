@@ -1,8 +1,7 @@
 boto3
 click
 jsonschema
-paho-mqtt<2
+paho-mqtt
 pyyaml
 requests
-shapely<2
-urllib3<2
+shapely

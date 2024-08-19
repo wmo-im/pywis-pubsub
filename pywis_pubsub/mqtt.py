@@ -63,7 +63,8 @@ class MQTTPubSubClient:
 
         msg = f'Connecting to broker {self.broker_safe_url} with id {self.client_id}'  # noqa
         LOGGER.debug(msg)
-        self.conn = mqtt_client.Client(self.client_id,
+        self.conn = mqtt_client.Client(mqtt_client.CallbackAPIVersion.VERSION2,
+                                       self.client_id,
                                        userdata=self.userdata,
                                        transport=transport)
 
@@ -141,15 +142,16 @@ class MQTTPubSubClient:
         :returns: `None`
         """
 
-        def on_connect(client, userdata, flags, rc):
+        def on_connect(client, userdata, flags, reason_code, properties):
             LOGGER.debug(f'Connected to broker {self.broker_safe_url}')
             LOGGER.debug(f'Subscribing to topics {topics}')
             for topic in topics:
                 client.subscribe(topic, qos=qos)
                 LOGGER.debug(f'Subscribed to topic {topic}, qos {qos}')
 
-        def on_disconnect(client, userdata, rc):
-            LOGGER.debug(f'Disconnected from {self.broker_safe_url}: ({rc})')
+        def on_disconnect(client, userdata, flags, reason_code, properties):
+            msg = f'Disconnected from {self.broker_safe_url}: ({reason_code})'
+            LOGGER.debug(msg)
 
         LOGGER.debug(f'Subscribing to broker {self.broker_safe_url}, topic(s) {topics}')  # noqa
         self.conn.on_connect = on_connect
