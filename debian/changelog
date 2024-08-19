@@ -1,3 +1,9 @@
+pywis-pubsub (0.8.0) noble; urgency=medium
+
+ * remove version in lieu of conformsTo
+
+ -- Tom Kralidis <tomkralidis@gmail.com>  Mon, 19 Aug 2024 10:21:23 +0000
+
 pywis-pubsub (0.7.2) noble; urgency=medium
 
  * safeguard WNM link href checking
