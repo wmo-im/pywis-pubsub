@@ -22,6 +22,7 @@
 from copy import deepcopy
 import logging
 import random
+import ssl
 from typing import Any, Callable
 from urllib.parse import urlparse
 
@@ -91,6 +92,10 @@ class MQTTPubSubClient:
             tls_settings = {
                 'tls_version': 2
             }
+
+            if not options.get('verify_certs'):
+                tls_settings['cert_reqs'] = ssl.CERT_NONE
+
             LOGGER.debug(f'TLS settings: {tls_settings}')
             if options.get('certfile') is not None:
                 LOGGER.debug('Setting TLS certfile')
