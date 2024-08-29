@@ -71,6 +71,10 @@ class MQTTPubSubClient:
 
         self.conn.enable_logger(logger=LOGGER)
 
+        if self.broker_url.scheme in ['ws', 'wss']:
+            LOGGER.debug('Setting Websockets path: {self.broker_url.path}')
+            self.conn.ws_set_options(self.broker_url.path)
+
         if None not in [self.broker_url.username, self.broker_url.password]:
             LOGGER.debug('Setting credentials')
             self.conn.username_pw_set(
