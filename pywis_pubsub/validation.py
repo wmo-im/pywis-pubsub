@@ -38,6 +38,8 @@ def validate_message(instance: dict, validate_format=False) -> Tuple[bool, str]:
 
     :param instance: `dict` of JSON
 
+    :param validate_format: `bool` of whether to validate format
+
     :returns: `tuple` of `bool` of validation result
               and `str` of error message(s)
     """
