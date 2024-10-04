@@ -24,7 +24,7 @@ import logging
 from typing import Tuple
 
 import click
-from jsonschema import validate
+from jsonschema import validate, FormatChecker
 
 from pywis_pubsub import cli_options
 from pywis_pubsub.schema import MESSAGE_SCHEMA
@@ -32,16 +32,15 @@ from pywis_pubsub.schema import MESSAGE_SCHEMA
 LOGGER = logging.getLogger(__name__)
 
 
-def validate_message(instance: dict) -> Tuple[bool, str]:
+def validate_message(instance: dict, validate_format=False) -> Tuple[bool, str]:
     """
-    Validate a JSON instance document against an JSON schema
+    Validate a JSON instance document against a JSON schema
 
     :param instance: `dict` of JSON
 
     :returns: `tuple` of `bool` of validation result
               and `str` of error message(s)
     """
-
     success = False
     error_message = None
 
@@ -54,11 +53,10 @@ def validate_message(instance: dict) -> Tuple[bool, str]:
         schema = json.load(fh)
 
     try:
-        validate(instance, schema)
+        validate(instance, schema, format_checker=FormatChecker() if validate_format else None)
         success = True
     except Exception as err:
         error_message = repr(err)
-
     return (success, error_message)
 
 
