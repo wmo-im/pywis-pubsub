@@ -5,3 +5,5 @@ paho-mqtt
 pyyaml
 requests
 shapely
+strict-rfc3339
+rfc3339-validator
