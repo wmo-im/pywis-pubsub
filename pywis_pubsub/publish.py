@@ -35,7 +35,7 @@ from pywis_pubsub import cli_options
 from pywis_pubsub import util
 from pywis_pubsub.message import LINK_TYPES
 from pywis_pubsub.mqtt import MQTTPubSubClient
-from pywis_pubsub.validation import validate_
+from pywis_pubsub.ets import validate
 
 
 LOGGER = logging.getLogger(__name__)
@@ -248,7 +248,7 @@ def publish(ctx, file_, config, url, topic, datetime_, identifier,
 
     if file_ is not None:
         if config.get('validate_message', False):
-            ctx.invoke(validate_, message=file_)
+            ctx.invoke(validate, message=file_)
             file_.seek(0)
         message = json.load(file_)
     else:
