@@ -113,10 +113,9 @@ class WNMETSTest(unittest.TestCase):
                 record = json.load(fh)
                 ts = WNMTestSuite(record)
                 results = ts.run_tests(fail_on_schema_validation=True)
-    
+
                 codes = [r['code'] for r in results['ets-report']['tests']]
-    
-                print(codes)
+
                 self.assertEqual(codes.count('FAILED'), 1)
                 self.assertEqual(codes.count('PASSED'), 6)
                 self.assertEqual(codes.count('SKIPPED'), 0)
