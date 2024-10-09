@@ -5,4 +5,4 @@ broker: mqtt://localhost:1883
 publish_topic: origin/a/wis2/mwi/malawi_wmo_demo/data/core/weather/surface-based-observations/synop
 
 # application-type of file being published
-content_type: application/x-bufr
+content_type: application/bufr

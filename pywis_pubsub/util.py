@@ -198,8 +198,8 @@ def guess_extension(media_type: str) -> str:
     extension = None
 
     wmo_extra_types = {
-        'application/x-bufr': '.bufr4',
-        'application/x-grib': '.grib2',
+        'application/bufr': '.bufr4',
+        'application/grib': '.grib2',
         'application/cap+xml': '.cap'
     }
 
