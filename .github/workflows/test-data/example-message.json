@@ -23,7 +23,7 @@
     "links": [
         {
             "rel": "canonical",
-            "type": "application/x-bufr",
+            "type": "application/bufr",
             "href": "https://pywis-pubsub-test.s3.eu-central-1.amazonaws.com/WIGOS_0-454-2-AWSCHIKANGAWA_20221109T135500.bufr4",
             "length": 247
         }

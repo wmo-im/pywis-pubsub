@@ -182,7 +182,7 @@ from pywis_pubsub.publish import create_message
 
 message = create_message(
         topic='foo/bar',
-        content_type='application/x-bufr',
+        content_type='application/bufr',
         url='http://www.meteo.xx/stationXYZ-20221111085500.bufr4', 
         identifier='stationXYZ-20221111085500', 
         datetime_=datetime.now(timezone.utc),
