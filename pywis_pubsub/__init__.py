@@ -28,7 +28,6 @@ from pywis_pubsub.kpi import kpi
 from pywis_pubsub.publish import publish
 from pywis_pubsub.schema import schema
 from pywis_pubsub.subscribe import subscribe
-from pywis_pubsub.validation import validate_
 from pywis_pubsub.verification import verify
 
 
@@ -47,7 +46,6 @@ def message():
     pass
 
 
-message.add_command(validate_)
 message.add_command(verify)
 
 cli.add_command(message)

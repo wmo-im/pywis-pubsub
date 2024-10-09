@@ -27,7 +27,6 @@ from unittest.mock import patch
 from requests import Session
 from pywis_pubsub.ets import WNMTestSuite
 from pywis_pubsub.kpi import calculate_grade, WNMKeyPerformanceIndicators
-from pywis_pubsub.validation import validate_message
 from pywis_pubsub.verification import verify_data
 
 TESTDATA_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -53,24 +52,6 @@ class PyWISPubSubTest(unittest.TestCase):
     def tearDown(self):
         """return to pristine state"""
         pass
-
-    def test_validation(self):
-        """Test validation"""
-
-        with open(get_abspath('test_valid.json')) as fh:
-            data = json.load(fh)
-            is_valid, errors = validate_message(data)
-            self.assertTrue(is_valid)
-
-        with open(get_abspath('test_invalid.json')) as fh:
-            data = json.load(fh)
-            is_valid, errors = validate_message(data)
-            self.assertFalse(is_valid)
-
-        with open(get_abspath('test_malformed.json')) as fh:
-            with self.assertRaises(json.decoder.JSONDecodeError):
-                data = json.load(fh)
-                is_valid, errors = validate_message(data)
 
     @patch.object(Session, 'get')
     def test_verification(self, mock_get):
@@ -126,6 +107,24 @@ class WNMETSTest(unittest.TestCase):
 
             with self.assertRaises(ValueError):
                 ts.run_tests(fail_on_schema_validation=True)
+
+        with self.assertRaises(ValueError):
+            with open(get_abspath('test_invalid.json')) as fh:
+                record = json.load(fh)
+                ts = WNMTestSuite(record)
+                results = ts.run_tests(fail_on_schema_validation=True)
+
+                codes = [r['code'] for r in results['ets-report']['tests']]
+
+                self.assertEqual(codes.count('FAILED'), 1)
+                self.assertEqual(codes.count('PASSED'), 6)
+                self.assertEqual(codes.count('SKIPPED'), 0)
+
+        with self.assertRaises(json.decoder.JSONDecodeError):
+            with open(get_abspath('test_malformed.json')) as fh:
+                record = json.load(fh)
+                ts = WNMTestSuite(record)
+                results = ts.run_tests()
 
 
 class WNMKPITest(unittest.TestCase):

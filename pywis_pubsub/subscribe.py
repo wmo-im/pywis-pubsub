@@ -28,12 +28,12 @@ import click
 
 from pywis_pubsub import cli_options
 from pywis_pubsub import util
+from pywis_pubsub.ets import WNMTestSuite
 from pywis_pubsub.geometry import is_message_within_bbox
 from pywis_pubsub.hook import load_hook
 from pywis_pubsub.message import get_link, get_data
 from pywis_pubsub.mqtt import MQTTPubSubClient
 from pywis_pubsub.storage import STORAGES
-from pywis_pubsub.validation import validate_message
 from pywis_pubsub.verification import data_verified
 
 
@@ -51,11 +51,11 @@ def on_message_handler(client, userdata, msg):
     try:
         if userdata.get('validate_message', False):
             LOGGER.debug('Validating message')
-            success, err = validate_message(msg_dict)
-            if not success:
-                LOGGER.error(f'Message is not a valid notification: {err}')
-                return
-    except RuntimeError as err:
+
+            ts = WNMTestSuite(msg_dict)
+            _ = ts.run_tests(fail_on_schema_validation=True)
+
+    except Exception as err:
         LOGGER.error(f'Cannot validate message: {err}')
         return
 
