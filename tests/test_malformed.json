@@ -29,7 +29,7 @@
         {
             "href": "https://example.org/data/4Pubsub/92c557ef-d28e-4713-91af-2e2e7be6f8ab.bufr4",
             "rel": "canonical",
-            "type": "application/x-bufr"
+            "type": "application/bufr"
         }
     ]
 }
