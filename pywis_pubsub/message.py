@@ -64,7 +64,7 @@ def get_data(msg_dict: dict, verify_certs=True) -> bytes:
     :returns: `bytes` of data
     """
 
-    link = get_link(msg_dict['links'])
+    link = get_link(msg_dict.get('links', []))
 
     if link:
         LOGGER.debug(f'Found link: {link}')

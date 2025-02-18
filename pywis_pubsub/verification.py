@@ -97,7 +97,7 @@ def verify_data(instance: dict, verify_certs: bool = True) -> bool:
     if 'content' in instance['properties']:
         size = instance['properties']['content']['size']
     else:
-        size = get_link(instance['links'])['length']
+        size = get_link(instance.get('links', [])).get('length')
 
     LOGGER.debug(f'size: {size}')
     return data_verified(data, size, method, value)

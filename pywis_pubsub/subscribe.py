@@ -70,7 +70,7 @@ def on_message_handler(client, userdata, msg):
             LOGGER.debug('Message geometry not within bbox; skipping')
             return
 
-    clink = get_link(msg_dict['links'])
+    clink = get_link(msg_dict.get('links', []))
     if not clink:
         LOGGER.warning('No valid data link found')
         return
@@ -106,7 +106,7 @@ def on_message_handler(client, userdata, msg):
         filepath = userdata['storage']['options'].get('filepath', 'data_id')
         LOGGER.debug(f'Using {filepath} for naming filepath')
 
-        link = get_link(msg_dict['links'])
+        link = get_link(msg_dict.get('links', []))
 
         if filepath == 'link':
             LOGGER.debug('Using link as filepath')

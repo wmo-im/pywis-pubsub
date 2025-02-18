@@ -34,7 +34,7 @@ LOGGER = logging.getLogger(__name__)
 
 class MQTTPubSubClient:
     """MQTT PubSub client"""
-    def __init__(self, broker: str, options: dict = {}) -> None:
+    def __init__(self, broker: str, options: dict = {}, conn=None) -> None:
         """
         PubSub initializer
 
@@ -61,6 +61,11 @@ class MQTTPubSubClient:
         # if scheme is ws or wss, set transport to websockets
         if self.broker_url.scheme in ['ws', 'wss']:
             transport = 'websockets'
+
+        if conn is not None:
+            LOGGER.debug(f'Using existing connection {conn}')
+            self.conn = conn
+            return
 
         msg = f'Connecting to broker {self.broker_safe_url} with id {self.client_id}'  # noqa
         LOGGER.debug(msg)
